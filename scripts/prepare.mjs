@@ -251,27 +251,27 @@ async function downloadFile(url, path) {
 const resolveMmdb = () =>
   resolveResource({
     file: 'country.mmdb',
-    downloadURL: `https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb`
+    downloadURL: `https://github.com/d2184/geoip/raw/release/country.mmdb`
   })
 const resolveMetadb = () =>
   resolveResource({
     file: 'geoip.metadb',
-    downloadURL: `https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb`
+    downloadURL: `https://github.com/d2184/geoip/raw/release/geoip.metadb`
   })
 const resolveGeosite = () =>
   resolveResource({
     file: 'geosite.dat',
-    downloadURL: `https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat`
+    downloadURL: `https://github.com/d2184/geosite/raw/release/geosite.dat`
   })
 const resolveGeoIP = () =>
   resolveResource({
     file: 'geoip.dat',
-    downloadURL: `https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat`
+    downloadURL: `https://github.com/d2184/geoip/raw/release/geoip.dat`
   })
 const resolveASN = () =>
   resolveResource({
     file: 'ASN.mmdb',
-    downloadURL: `https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb`
+    downloadURL: `https://github.com/d2184/geoip/raw/release/GeoLite2-ASN.mmdb`
   })
 const resolveEnableLoopback = () =>
   resolveResource({
