@@ -1,5 +1,4 @@
-import { Divider } from '@heroui/react'
-import { Modal } from '@heroui-v3/react'
+import { Modal, Separator } from '@heroui-v3/react'
 import React, { useEffect, useState } from 'react'
 import { getOverride } from '@renderer/utils/ipc'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
@@ -40,7 +39,7 @@ const ExecLogModal: React.FC<Props> = (props) => {
                 return (
                   <React.Fragment key={`${log}-${index}`}>
                     <small className="break-all select-text">{log}</small>
-                    <Divider />
+                    <Separator variant="tertiary" />
                   </React.Fragment>
                 )
               })}

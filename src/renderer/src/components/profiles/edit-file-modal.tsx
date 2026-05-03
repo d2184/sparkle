@@ -1,5 +1,4 @@
-import { Button, Switch } from '@heroui/react'
-import { Modal } from '@heroui-v3/react'
+import { Button, Label, Modal, Switch } from '@heroui-v3/react'
 import React, { useEffect, useState } from 'react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import { getProfileStr, setProfileStr } from '@renderer/utils/ipc'
@@ -71,8 +70,7 @@ const EditFileModal: React.FC<Props> = (props) => {
                     注意：此处编辑配置更新订阅后会还原，如需要自定义配置请使用
                     <Button
                       size="sm"
-                      color="primary"
-                      variant="light"
+                      variant="ghost"
                       className="app-nodrag"
                       onPress={() => {
                         navigate('/override')
@@ -96,20 +94,30 @@ const EditFileModal: React.FC<Props> = (props) => {
             </Modal.Body>
             <Modal.Footer className="flex justify-between pt-0 pb-0">
               <div className="flex items-center space-x-2">
-                <Switch size="sm" isSelected={isDiff} onValueChange={setIsDiff}>
-                  显示修改
+                <Switch size="sm" isSelected={isDiff} onChange={setIsDiff}>
+                  <Switch.Content>
+                    <Label>显示修改</Label>
+                  </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
-                <Switch size="sm" isSelected={sideBySide} onValueChange={setSideBySide}>
-                  侧边显示
+                <Switch size="sm" isSelected={sideBySide} onChange={setSideBySide}>
+                  <Switch.Content>
+                    <Label>侧边显示</Label>
+                  </Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
                 </Switch>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="light" onPress={handleClose}>
+                <Button size="sm" variant="secondary" onPress={handleClose}>
                   取消
                 </Button>
                 <Button
                   size="sm"
-                  color="primary"
+                  variant="primary"
                   onPress={async () => {
                     await setProfileStr(id, currData)
                     onClose()

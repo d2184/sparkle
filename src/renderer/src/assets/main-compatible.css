@@ -262,6 +262,19 @@
   width: 80%;
 }
 
+.setting-item .input[data-setting-input='edit-modal'],
+.setting-item .select[data-setting-input='edit-modal'] {
+  width: 100%;
+}
+
+.setting-item .input[data-setting-input='edit-modal-name'] {
+  width: calc(var(--spacing) * 60);
+}
+
+.setting-item .input[data-setting-input='edit-modal-number'] {
+  width: calc(var(--spacing) * 40);
+}
+
 .setting-item .input[data-setting-input='full'],
 .setting-item .input-group[data-setting-input='full'] {
   width: 100%;
