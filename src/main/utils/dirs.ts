@@ -248,6 +248,7 @@ export function findSystemMihomo(): string[] {
       '/bin',
       '/usr/bin',
       '/usr/local/bin',
+      '/opt/homebrew/bin',
       path.join(homeDir, '.local/bin'),
       path.join(homeDir, 'bin')
     ]
