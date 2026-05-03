@@ -1,17 +1,7 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcMainHandlers } from './utils/ipc'
-import windowStateKeeper from 'electron-window-state'
-import {
-  app,
-  shell,
-  BrowserWindow,
-  Menu,
-  dialog,
-  Notification,
-  powerMonitor,
-  ipcMain
-} from 'electron'
-import { addOverrideItem, addProfileItem, getAppConfig, patchControledMihomoConfig } from './config'
+import { app, shell, BrowserWindow, Menu, dialog } from 'electron'
+import { getAppConfig, patchControledMihomoConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import icon from '../../resources/icon.png?asset'
@@ -20,17 +10,20 @@ import { createApplicationMenu } from './resolve/menu'
 import { init } from './utils/init'
 import { join } from 'path'
 import { initShortcut } from './resolve/shortcut'
-import { execSync, spawn } from 'child_process'
-import { createElevateTaskSync } from './sys/misc'
 import { initProfileUpdater } from './core/profileUpdater'
-import { existsSync, writeFileSync } from 'fs'
-import { exePath, taskDir } from './utils/dirs'
-import path from 'path'
 import { startMonitor } from './resolve/trafficMonitor'
 import { showFloatingWindow } from './resolve/floatingWindow'
-import iconv from 'iconv-lite'
 import { getAppConfigSync } from './config/app'
-import { getUserAgent } from './utils/userAgent'
+import { createMainWindowStateManager } from './resolve/mainWindowState'
+import {
+  applyWindowsGpuWorkaround,
+  ensureWindowsElevatedStartup,
+  useLinuxCustomRelaunch
+} from './sys/startup'
+import { handleDeepLink } from './resolve/deepLink'
+import { initAppQuitLifecycle } from './resolve/appLifecycle'
+
+export { setNotQuitDialog } from './resolve/appLifecycle'
 
 let quitTimeout: NodeJS.Timeout | null = null
 export let mainWindow: BrowserWindow | null = null
@@ -75,44 +68,14 @@ function exitApp(): void {
   app.exit()
 }
 
-if (
-  process.platform === 'win32' &&
-  !is.dev &&
-  !process.argv.includes('noadmin') &&
-  syncConfig.corePermissionMode !== 'service'
-) {
-  try {
-    createElevateTaskSync()
-  } catch (createError) {
-    try {
-      if (process.argv.slice(1).length > 0) {
-        writeFileSync(path.join(taskDir(), 'param.txt'), process.argv.slice(1).join(' '))
-      } else {
-        writeFileSync(path.join(taskDir(), 'param.txt'), 'empty')
-      }
-      if (!existsSync(path.join(taskDir(), 'sparkle-run.exe'))) {
-        throw new Error('sparkle-run.exe not found')
-      } else {
-        execSync('%SystemRoot%\\System32\\schtasks.exe /run /tn sparkle-run')
-      }
-    } catch (e) {
-      let createErrorStr = `${createError}`
-      let eStr = `${e}`
-      try {
-        createErrorStr = iconv.decode((createError as { stderr: Buffer }).stderr, 'gbk')
-        eStr = iconv.decode((e as { stderr: Buffer }).stderr, 'gbk')
-      } catch {
-        // ignore
-      }
-      dialog.showErrorBox(
-        '首次启动请以管理员权限运行',
-        `首次启动请以管理员权限运行\n${createErrorStr}\n${eStr}`
-      )
-    } finally {
-      exitApp()
-    }
+function clearLightweightTimeout(): void {
+  if (quitTimeout) {
+    clearTimeout(quitTimeout)
+    quitTimeout = null
   }
 }
+
+ensureWindowsElevatedStartup(syncConfig.corePermissionMode, exitApp)
 
 const shouldDisableTunInDev = process.platform === 'win32' && is.dev
 
@@ -122,31 +85,8 @@ if (!gotTheLock) {
   app.quit()
 }
 
-export function customRelaunch(): void {
-  const script = `while kill -0 ${process.pid} 2>/dev/null; do
-  sleep 0.1
-done
-${process.argv.join(' ')} & disown
-exit
-`
-  spawn('sh', ['-c', `"${script}"`], {
-    shell: true,
-    detached: true,
-    stdio: 'ignore'
-  })
-}
-
-if (process.platform === 'linux') {
-  app.relaunch = customRelaunch
-}
-
-const electronMajor = parseInt(process.versions.electron.split('.')[0], 10) || 0
-
-if (process.platform === 'win32' && !exePath().startsWith('C') && electronMajor < 38) {
-  // https://github.com/electron/electron/issues/43278
-  // https://github.com/electron/electron/issues/36698
-  app.commandLine.appendSwitch('in-process-gpu')
-}
+useLinuxCustomRelaunch()
+applyWindowsGpuWorkaround()
 
 const initPromise = init()
 
@@ -158,23 +98,14 @@ app.on('second-instance', async (_event, commandline) => {
   showMainWindow()
   const url = commandline.pop()
   if (url) {
-    await handleDeepLink(url)
+    await handleDeepLink(url, { getMainWindow: () => mainWindow, createWindow, showWindow })
   }
 })
 
 app.on('open-url', async (_event, url) => {
   showMainWindow()
-  await handleDeepLink(url)
+  await handleDeepLink(url, { getMainWindow: () => mainWindow, createWindow, showWindow })
 })
-
-let isQuitting = false,
-  notQuitDialog = false
-
-let lastQuitAttempt = 0
-
-export function setNotQuitDialog(): void {
-  notQuitDialog = true
-}
 
 function showWindow(): number {
   if (mainWindow) {
@@ -195,83 +126,11 @@ function showWindow(): number {
   return 500
 }
 
-function showQuitConfirmDialog(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (!mainWindow) {
-      resolve(true)
-      return
-    }
-
-    const delay = showWindow()
-    setTimeout(() => {
-      mainWindow?.webContents.send('show-quit-confirm')
-      const handleQuitConfirm = (_event: Electron.IpcMainEvent, confirmed: boolean): void => {
-        ipcMain.off('quit-confirm-result', handleQuitConfirm)
-        resolve(confirmed)
-      }
-      ipcMain.once('quit-confirm-result', handleQuitConfirm)
-    }, delay)
-  })
-}
-
-app.on('window-all-closed', () => {
-  // Don't quit app when all windows are closed
-})
-
-app.on('before-quit', async (e) => {
-  if (!isQuitting && !notQuitDialog) {
-    e.preventDefault()
-
-    const now = Date.now()
-    if (now - lastQuitAttempt < 500) {
-      isQuitting = true
-      if (quitTimeout) {
-        clearTimeout(quitTimeout)
-        quitTimeout = null
-      }
-      await triggerSysProxy(false, false)
-      await stopCore()
-      exitApp()
-      return
-    }
-    lastQuitAttempt = now
-
-    const confirmed = await showQuitConfirmDialog()
-
-    if (confirmed) {
-      isQuitting = true
-      if (quitTimeout) {
-        clearTimeout(quitTimeout)
-        quitTimeout = null
-      }
-      await triggerSysProxy(false, false)
-      await stopCore()
-      exitApp()
-    }
-  } else if (notQuitDialog) {
-    isQuitting = true
-    if (quitTimeout) {
-      clearTimeout(quitTimeout)
-      quitTimeout = null
-    }
-    await triggerSysProxy(false, false)
-    await stopCore()
-    exitApp()
-  }
-})
-
-powerMonitor.on('shutdown', async () => {
-  if (quitTimeout) {
-    clearTimeout(quitTimeout)
-    quitTimeout = null
-  }
-  await triggerSysProxy(false, false, true)
-  await stopCore()
-  exitApp()
-})
-
-app.on('will-quit', () => {
-  disableSysProxySync()
+initAppQuitLifecycle({
+  getMainWindow: () => mainWindow,
+  showWindow,
+  clearLightweightTimeout,
+  exitApp
 })
 
 // This method will be called when Electron has finished
@@ -351,143 +210,6 @@ app.whenReady().then(async () => {
   })
 })
 
-async function handleDeepLink(url: string): Promise<void> {
-  if (!url.startsWith('clash://') && !url.startsWith('mihomo://') && !url.startsWith('sparkle://'))
-    return
-
-  const urlObj = new URL(url)
-  switch (urlObj.host) {
-    case 'install-config': {
-      try {
-        const profileUrl = urlObj.searchParams.get('url')
-        const profileName = urlObj.searchParams.get('name')
-        if (!profileUrl) {
-          throw new Error('缺少参数 url')
-        }
-
-        const confirmed = await showProfileInstallConfirm(profileUrl, profileName)
-
-        if (confirmed) {
-          await addProfileItem({
-            type: 'remote',
-            name: profileName ?? undefined,
-            url: profileUrl
-          })
-          mainWindow?.webContents.send('profileConfigUpdated')
-          new Notification({ title: '订阅导入成功' }).show()
-        }
-      } catch (e) {
-        dialog.showErrorBox('订阅导入失败', `${url}\n${e}`)
-      }
-      break
-    }
-    case 'install-override': {
-      try {
-        const urlParam = urlObj.searchParams.get('url')
-        const profileName = urlObj.searchParams.get('name')
-        if (!urlParam) {
-          throw new Error('缺少参数 url')
-        }
-
-        const confirmed = await showOverrideInstallConfirm(urlParam, profileName)
-
-        if (confirmed) {
-          const url = new URL(urlParam)
-          const name = url.pathname.split('/').pop()
-          await addOverrideItem({
-            type: 'remote',
-            name: profileName ?? (name ? decodeURIComponent(name) : undefined),
-            url: urlParam,
-            ext: url.pathname.endsWith('.js') ? 'js' : 'yaml'
-          })
-          mainWindow?.webContents.send('overrideConfigUpdated')
-          new Notification({ title: '覆写导入成功' }).show()
-        }
-      } catch (e) {
-        dialog.showErrorBox('覆写导入失败', `${url}\n${e}`)
-      }
-      break
-    }
-  }
-}
-
-async function showProfileInstallConfirm(url: string, name?: string | null): Promise<boolean> {
-  if (!mainWindow) {
-    await createWindow()
-  }
-  let extractedName = name
-
-  if (!extractedName) {
-    try {
-      const axios = (await import('axios')).default
-      const response = await axios.head(url, {
-        headers: {
-          'User-Agent': await getUserAgent()
-        },
-        timeout: 5000
-      })
-
-      if (response.headers['content-disposition']) {
-        extractedName = parseFilename(response.headers['content-disposition'])
-      }
-    } catch (error) {
-      // ignore
-    }
-  }
-
-  return new Promise((resolve) => {
-    const delay = showWindow()
-    setTimeout(() => {
-      mainWindow?.webContents.send('show-profile-install-confirm', {
-        url,
-        name: extractedName || name
-      })
-      const handleConfirm = (_event: Electron.IpcMainEvent, confirmed: boolean): void => {
-        ipcMain.off('profile-install-confirm-result', handleConfirm)
-        resolve(confirmed)
-      }
-      ipcMain.once('profile-install-confirm-result', handleConfirm)
-    }, delay)
-  })
-}
-
-function parseFilename(str: string): string {
-  if (str.match(/filename\*=.*''/)) {
-    const filename = decodeURIComponent(str.split(/filename\*=.*''/)[1])
-    return filename
-  } else {
-    const filename = str.split('filename=')[1]
-    return filename?.replace(/"/g, '') || ''
-  }
-}
-
-async function showOverrideInstallConfirm(url: string, name?: string | null): Promise<boolean> {
-  if (!mainWindow) {
-    await createWindow()
-  }
-  return new Promise((resolve) => {
-    let finalName = name
-    if (!finalName) {
-      const urlObj = new URL(url)
-      const pathName = urlObj.pathname.split('/').pop()
-      finalName = pathName ? decodeURIComponent(pathName) : undefined
-    }
-
-    const delay = showWindow()
-    setTimeout(() => {
-      mainWindow?.webContents.send('show-override-install-confirm', {
-        url,
-        name: finalName
-      })
-      const handleConfirm = (_event: Electron.IpcMainEvent, confirmed: boolean): void => {
-        ipcMain.off('override-install-confirm-result', handleConfirm)
-        resolve(confirmed)
-      }
-      ipcMain.once('override-install-confirm-result', handleConfirm)
-    }, delay)
-  })
-}
-
 export async function createWindow(appConfig?: AppConfig): Promise<void> {
   if (isCreatingWindow) {
     if (createWindowPromise) {
@@ -502,26 +224,20 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
   try {
     const config = appConfig ?? (await getAppConfig())
     const { useWindowFrame = false } = config
-
-    const [mainWindowState] = await Promise.all([
-      Promise.resolve(
-        windowStateKeeper({
-          defaultWidth: 800,
-          defaultHeight: 700,
-          file: 'window-state.json'
-        })
-      ),
+    const [windowStateManager] = await Promise.all([
+      Promise.resolve(createMainWindowStateManager()),
       process.platform === 'darwin'
         ? createApplicationMenu()
         : Promise.resolve(Menu.setApplicationMenu(null))
     ])
+    const windowState = windowStateManager.state
     mainWindow = new BrowserWindow({
       minWidth: 800,
       minHeight: 600,
-      width: mainWindowState.width,
-      height: mainWindowState.height,
-      x: mainWindowState.x,
-      y: mainWindowState.y,
+      width: windowState.width,
+      height: windowState.height,
+      x: windowState.x,
+      y: windowState.y,
       show: false,
       frame: useWindowFrame,
       fullscreenable: false,
@@ -540,7 +256,7 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         ...(is.dev ? { webSecurity: false } : {})
       }
     })
-    mainWindowState.manage(mainWindow)
+    windowStateManager.attach(mainWindow)
     mainWindow.on('ready-to-show', async () => {
       const { silentStart = false } = await getAppConfig()
       if (!silentStart) {
@@ -567,20 +283,13 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
     })
 
     mainWindow.on('closed', () => {
+      windowStateManager.cleanup()
       mainWindow = null
     })
 
-    mainWindow.on('resized', () => {
-      if (mainWindow) mainWindowState.saveState(mainWindow)
-    })
-
-    mainWindow.on('unmaximize', () => {
-      if (mainWindow) mainWindowState.saveState(mainWindow)
-    })
-
-    mainWindow.on('move', () => {
-      if (mainWindow) mainWindowState.saveState(mainWindow)
-    })
+    mainWindow.on('resized', windowStateManager.save)
+    mainWindow.on('unmaximize', windowStateManager.save)
+    mainWindow.on('move', windowStateManager.save)
 
     mainWindow.on('session-end', async () => {
       await triggerSysProxy(false, false, true)
