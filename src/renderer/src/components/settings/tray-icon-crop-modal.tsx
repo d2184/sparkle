@@ -259,7 +259,7 @@ const TrayIconCropModal: React.FC<Props> = (props) => {
         className="top-12 h-[calc(100%-48px)]"
       >
         <Modal.Container>
-          <Modal.Dialog className="tray-icon-crop-modal w-fit max-w-[calc(100vw-64px)] max-h-[calc(100vh-80px)] bg-white">
+          <Modal.Dialog className="tray-icon-crop-modal w-fit max-w-[calc(100vw-64px)] max-h-[calc(100vh-80px)]">
             <Modal.Header className="app-drag">
               <Modal.Heading>裁剪托盘图标</Modal.Heading>
             </Modal.Header>
