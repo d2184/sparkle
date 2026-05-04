@@ -16,16 +16,29 @@ import {
 import { copyFileSync, writeFileSync } from 'fs'
 import { execWithElevation } from '../utils/elevation'
 
-export function getFilePath(ext: string[]): string[] | undefined {
+export function getFilePath(
+  ext: string[],
+  title = '选择订阅文件',
+  filterName = `${ext} file`
+): string[] | undefined {
   return dialog.showOpenDialogSync({
-    title: '选择订阅文件',
-    filters: [{ name: `${ext} file`, extensions: ext }],
+    title,
+    filters: [{ name: filterName, extensions: ext }],
     properties: ['openFile']
   })
 }
 
 export async function readTextFile(filePath: string): Promise<string> {
   return await readFile(filePath, 'utf8')
+}
+
+export async function readImageFileDataURL(filePath: string): Promise<string> {
+  const ext = path.extname(filePath).toLowerCase()
+  const mimeType =
+    ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : 'image/png'
+  const data = await readFile(filePath)
+
+  return `data:${mimeType};base64,${data.toString('base64')}`
 }
 
 export function openFile(type: 'profile' | 'override', id: string, ext?: 'yaml' | 'js'): void {

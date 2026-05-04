@@ -102,6 +102,7 @@ interface AppConfig {
   controlSniff?: boolean
   useDockIcon?: boolean
   showTraffic?: boolean
+  customTrayIcon?: string
   useCustomTrayMenu?: boolean
   webdavUrl?: string
   webdavDir?: string

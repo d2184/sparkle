@@ -7,6 +7,7 @@ export const defaultConfig: AppConfig = {
   appTheme: 'system',
   useWindowFrame: false,
   proxyInTray: true,
+  customTrayIcon: '',
   trayProxyDelayLayout: 'new-line',
   useCustomTrayMenu: false,
   saveLogs: true,

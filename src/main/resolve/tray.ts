@@ -33,14 +33,19 @@ import { triggerSysProxy } from '../sys/sysproxy'
 import { quitWithoutCore, restartCore } from '../core/manager'
 import { floatingWindow, triggerFloatingWindow } from './floatingWindow'
 import { is } from '@electron-toolkit/utils'
-import { join } from 'path'
+import { extname, join } from 'path'
 import { applyTheme } from './theme'
+import { existsSync } from 'fs'
 
 export let tray: Tray | null = null
 let customTrayWindow: BrowserWindow | null = null
 let trayMenu: Menu | null = null
 let trayIconUpdateListenerRegistered = false
 let updateTrayMenuListenerRegistered = false
+let lastTrafficTrayIcon: string | null = null
+type TrayImage = Electron.NativeImage | string
+const customTrayIconSize = 16
+const customTrayIconScaleFactors = [1, 1.25, 1.5, 2, 2.5, 3]
 
 function formatDelayText(delay: number): string {
   if (delay === 0) {
@@ -55,6 +60,67 @@ function createDarwinTrayIcon(): Electron.NativeImage {
   const icon = nativeImage.createFromPath(templateIcon).resize({ height: 16 })
   icon.setTemplateImage(true)
   return icon
+}
+
+function resizeTrayImageForScale(
+  icon: Electron.NativeImage,
+  scaleFactor: number
+): Electron.NativeImage {
+  const targetHeight = Math.round(customTrayIconSize * scaleFactor)
+
+  return icon.resize({ height: targetHeight, quality: 'best' })
+}
+
+function createMultiScaleTrayImage(icon: Electron.NativeImage): Electron.NativeImage {
+  const trayImage = nativeImage.createEmpty()
+
+  for (const scaleFactor of customTrayIconScaleFactors) {
+    const resizedIcon = resizeTrayImageForScale(icon, scaleFactor)
+    if (resizedIcon.isEmpty()) continue
+
+    trayImage.addRepresentation({
+      scaleFactor,
+      buffer: resizedIcon.toPNG()
+    })
+  }
+
+  if (!trayImage.isEmpty()) return trayImage
+
+  return resizeTrayImageForScale(icon, 1)
+}
+
+function createCustomTrayImage(customTrayIcon: string): TrayImage | null {
+  if (!customTrayIcon) return null
+
+  if (customTrayIcon.startsWith('data:image/')) {
+    const icon = nativeImage.createFromDataURL(customTrayIcon)
+    if (icon.isEmpty()) return null
+
+    return createMultiScaleTrayImage(icon)
+  }
+
+  if (!existsSync(customTrayIcon)) return null
+
+  const icon = nativeImage.createFromPath(customTrayIcon)
+  if (icon.isEmpty()) return null
+
+  const iconExt = extname(customTrayIcon).toLowerCase()
+  if (process.platform === 'win32' && iconExt === '.ico') {
+    return customTrayIcon
+  }
+  if (process.platform === 'linux') {
+    return customTrayIcon
+  }
+
+  return createMultiScaleTrayImage(icon)
+}
+
+function createTrafficTrayImage(png: string): Electron.NativeImage | null {
+  const image = nativeImage.createFromDataURL(png).resize({ height: customTrayIconSize })
+  if (image.isEmpty()) return null
+
+  image.setTemplateImage(true)
+  return image
 }
 
 function positionCustomTrayWindow(win: BrowserWindow): void {
@@ -467,21 +533,29 @@ export async function createTray(): Promise<void> {
   }
   tray?.setToolTip('Sparkle')
   tray?.setIgnoreDoubleClickEvents(true)
+  await updateTrayIcon()
   if (process.platform === 'darwin') {
     if (!useDockIcon && app.dock) {
       app.dock.hide()
     }
     if (!trayIconUpdateListenerRegistered) {
       ipcMain.on('trayIconUpdate', async (_, png?: string) => {
+        const { customTrayIcon = '' } = await getAppConfig()
+        const customIcon = createCustomTrayImage(customTrayIcon)
+        if (customIcon) {
+          tray?.setImage(customIcon)
+          return
+        }
         if (!png) {
+          lastTrafficTrayIcon = null
           tray?.setImage(createDarwinTrayIcon())
           return
         }
-        const image = nativeImage.createFromDataURL(png).resize({ height: 16 })
-        if (image.isEmpty()) {
+        lastTrafficTrayIcon = png
+        const image = createTrafficTrayImage(png)
+        if (!image) {
           return
         }
-        image.setTemplateImage(true)
         tray?.setImage(image)
       })
       trayIconUpdateListenerRegistered = true
@@ -512,6 +586,28 @@ export async function createTray(): Promise<void> {
       updateTrayMenuListenerRegistered = true
     }
   }
+}
+
+export async function updateTrayIcon(): Promise<void> {
+  if (!tray) return
+
+  const { customTrayIcon = '' } = await getAppConfig()
+  const customIcon = createCustomTrayImage(customTrayIcon)
+  if (customIcon) {
+    tray.setImage(customIcon)
+    return
+  }
+
+  if (process.platform === 'darwin') {
+    const trafficIcon = lastTrafficTrayIcon ? createTrafficTrayImage(lastTrafficTrayIcon) : null
+    tray.setImage(trafficIcon || createDarwinTrayIcon())
+    return
+  }
+  if (process.platform === 'win32') {
+    tray.setImage(icoIcon)
+    return
+  }
+  tray.setImage(pngIcon)
 }
 
 async function updateTrayMenu(): Promise<void> {

@@ -326,12 +326,22 @@ export async function findSystemMihomo(): Promise<string[]> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('findSystemMihomo'))
 }
 
-export async function getFilePath(ext: string[]): Promise<string[] | undefined> {
-  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('getFilePath', ext))
+export async function getFilePath(
+  ext: string[],
+  title?: string,
+  filterName?: string
+): Promise<string[] | undefined> {
+  return ipcErrorWrapper(
+    await window.electron.ipcRenderer.invoke('getFilePath', ext, title, filterName)
+  )
 }
 
 export async function readTextFile(filePath: string): Promise<string> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('readTextFile', filePath))
+}
+
+export async function readImageFileDataURL(filePath: string): Promise<string> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('readImageFileDataURL', filePath))
 }
 
 export async function getRuntimeConfigStr(): Promise<string> {
@@ -481,6 +491,10 @@ export async function showTrayIcon(): Promise<void> {
 
 export async function closeTrayIcon(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('closeTrayIcon'))
+}
+
+export async function updateTrayIcon(): Promise<void> {
+  return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('updateTrayIcon'))
 }
 
 export async function setDockVisible(visible: boolean): Promise<void> {

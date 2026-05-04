@@ -82,22 +82,32 @@
   width: 100%;
 }
 
-.setting-item .tabs {
+.setting-item .tabs,
+.tray-icon-crop-modal .tabs {
   --segment: var(--accent, hsl(var(--heroui-primary)));
   --segment-foreground: var(--accent-foreground, hsl(var(--heroui-primary-foreground, 0 0% 100%)));
   --color-segment: var(--segment);
   --color-segment-foreground: var(--segment-foreground);
 }
 
-.setting-item .tabs__list {
+.setting-item .tabs__list,
+.tray-icon-crop-modal .tabs__list {
   width: fit-content;
   gap: calc(var(--spacing) * 0.5);
   overflow: hidden;
   border-radius: var(--radius-lg, var(--radius));
 }
 
-.setting-item .tabs__tab {
+.tray-icon-crop-modal .tabs__list {
+  max-width: 100%;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.setting-item .tabs__tab,
+.tray-icon-crop-modal .tabs__tab {
   height: calc(var(--spacing) * 7);
+  width: fit-content;
   min-width: fit-content;
   border-radius: var(--radius-md, calc(var(--radius) * 0.75));
   padding-inline: calc(var(--spacing) * 3);
@@ -106,11 +116,71 @@
   color: var(--muted);
 }
 
-.setting-item .tabs__tab[data-selected='true'] {
+.tray-icon-crop-modal .tabs__tab {
+  padding-inline: calc(var(--spacing) * 2.5);
+}
+
+.tray-icon-crop-modal .modal__body {
+  overflow: hidden;
+}
+
+.tray-icon-crop-modal .input {
+  --focus: var(--accent, hsl(var(--heroui-primary)));
+  --color-field-border-focus: var(--focus);
+  --tw-ring-inset: inset;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-color: var(--focus);
+  border-width: 1px;
+  border-color: var(--border);
+}
+
+.tray-icon-crop-modal .input:focus,
+.tray-icon-crop-modal .input[data-focused='true'],
+.tray-icon-crop-modal .input[data-focus-visible='true'] {
+  border-color: var(--focus);
+}
+
+.tray-icon-crop-modal .slider {
+  gap: calc(var(--spacing) * 1);
+}
+
+.tray-icon-crop-modal .slider__track {
+  height: calc(var(--spacing) * 1.5) !important;
+  border-inline-width: 0 !important;
+  border-radius: var(--radius-full, 9999px);
+  background-color: color-mix(in oklab, var(--muted) 18%, transparent);
+}
+
+.tray-icon-crop-modal .slider__fill {
+  border-radius: inherit;
+}
+
+.tray-icon-crop-modal .slider__thumb {
+  box-sizing: border-box;
+  width: calc(var(--spacing) * 3) !important;
+  height: calc(var(--spacing) * 3) !important;
+  transform: translateY(-50%);
+  border: 2px solid var(--accent, hsl(var(--heroui-primary)));
+  background-color: white;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 16%),
+    0 0 0 1px rgb(0 0 0 / 4%);
+}
+
+.tray-icon-crop-modal .slider__thumb[data-dragging='true'],
+.tray-icon-crop-modal .slider__thumb[data-focus-visible='true'] {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 16%),
+    0 0 0 3px color-mix(in oklab, var(--accent, hsl(var(--heroui-primary))) 24%, transparent);
+}
+
+.setting-item .tabs__tab[data-selected='true'],
+.tray-icon-crop-modal .tabs__tab[data-selected='true'] {
   color: var(--accent-foreground);
 }
 
-.setting-item .tabs__indicator {
+.setting-item .tabs__indicator,
+.tray-icon-crop-modal .tabs__indicator {
   border-radius: var(--radius-md, calc(var(--radius) * 0.75));
   background-color: var(--accent, hsl(var(--heroui-primary)));
   box-shadow: none;

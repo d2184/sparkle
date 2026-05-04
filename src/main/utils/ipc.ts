@@ -80,6 +80,7 @@ import {
   getFilePath,
   openFile,
   openUWPTool,
+  readImageFileDataURL,
   readTextFile,
   resetAppConfig,
   setNativeTheme,
@@ -106,7 +107,13 @@ import {
 } from '../core/factory'
 import { listWebdavBackups, webdavBackup, webdavDelete, webdavRestore } from '../resolve/backup'
 import { getInterfaces } from '../sys/interface'
-import { closeTrayIcon, copyEnv, setDockVisible, showTrayIcon } from '../resolve/tray'
+import {
+  closeTrayIcon,
+  copyEnv,
+  setDockVisible,
+  showTrayIcon,
+  updateTrayIcon
+} from '../resolve/tray'
 import { registerShortcut } from '../resolve/shortcut'
 import {
   closeMainWindow,
@@ -279,8 +286,11 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('restartService', () => ipcErrorWrapper(restartService)())
   ipcMain.handle('stopService', () => ipcErrorWrapper(stopService)())
   ipcMain.handle('findSystemMihomo', () => findSystemMihomo())
-  ipcMain.handle('getFilePath', (_e, ext) => getFilePath(ext))
+  ipcMain.handle('getFilePath', (_e, ext, title, filterName) => getFilePath(ext, title, filterName))
   ipcMain.handle('readTextFile', (_e, filePath) => ipcErrorWrapper(readTextFile)(filePath))
+  ipcMain.handle('readImageFileDataURL', (_e, filePath) =>
+    ipcErrorWrapper(readImageFileDataURL)(filePath)
+  )
   ipcMain.handle('getRuntimeConfigStr', ipcErrorWrapper(getRuntimeConfigStr))
   ipcMain.handle('getRawProfileStr', ipcErrorWrapper(getRawProfileStr))
   ipcMain.handle('getCurrentProfileStr', ipcErrorWrapper(getCurrentProfileStr))
@@ -334,6 +344,7 @@ export function registerIpcMainHandlers(): void {
   })
   ipcMain.handle('showTrayIcon', () => ipcErrorWrapper(showTrayIcon)())
   ipcMain.handle('closeTrayIcon', () => ipcErrorWrapper(closeTrayIcon)())
+  ipcMain.handle('updateTrayIcon', () => ipcErrorWrapper(updateTrayIcon)())
   ipcMain.handle('setDockVisible', (_e, visible: boolean) => setDockVisible(visible))
   ipcMain.handle('showMainWindow', showMainWindow)
   ipcMain.handle('closeMainWindow', closeMainWindow)
