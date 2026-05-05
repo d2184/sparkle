@@ -1,5 +1,4 @@
 import { Button, Modal } from '@heroui-v3/react'
-import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { relaunchApp, webdavDelete, webdavRestore } from '@renderer/utils/ipc'
 import React, { useState } from 'react'
 import { MdDeleteForever } from 'react-icons/md'
@@ -9,8 +8,7 @@ interface Props {
 }
 const WebdavRestoreModal: React.FC<Props> = (props) => {
   const { filenames: names, onClose } = props
-  useAppConfig()
-  const [filenames, setFilenames] = useState<string[]>(names)
+  const [filenames, setFilenames] = useState<string[]>([...names].reverse())
   const [restoring, setRestoring] = useState(false)
 
   return (
@@ -26,15 +24,16 @@ const WebdavRestoreModal: React.FC<Props> = (props) => {
             <Modal.Header className="app-drag">
               <Modal.Heading>恢复备份</Modal.Heading>
             </Modal.Header>
-            <Modal.Body>
+            <Modal.Body className="flex flex-col gap-2 pb-4">
               {filenames.length === 0 ? (
                 <div className="flex justify-center">还没有备份</div>
               ) : (
                 filenames.map((filename) => (
-                  <div className="flex" key={filename}>
+                  <div className="flex gap-2" key={filename}>
                     <Button
                       size="sm"
                       fullWidth
+                      className="h-8 min-h-8 rounded-lg"
                       isPending={restoring}
                       variant="secondary"
                       onPress={async () => {
@@ -53,8 +52,8 @@ const WebdavRestoreModal: React.FC<Props> = (props) => {
                     </Button>
                     <Button
                       size="sm"
+                      className="h-8 min-h-8 min-w-8 rounded-lg px-2"
                       variant="danger-soft"
-                      className="ml-2"
                       onPress={async () => {
                         try {
                           await webdavDelete(filename)
