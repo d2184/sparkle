@@ -1,7 +1,7 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcMainHandlers } from './utils/ipc'
 import { app, shell, BrowserWindow, Menu, dialog } from 'electron'
-import { getAppConfig, patchControledMihomoConfig } from './config'
+import { getAppConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
 import icon from '../../resources/icon.png?asset'
@@ -31,6 +31,10 @@ let isCreatingWindow = false
 let windowShown = false
 let createWindowPromiseResolve: (() => void) | null = null
 let createWindowPromise: Promise<void> | null = null
+let initialWindowDisplayPromiseResolve: (() => void) | null = null
+const initialWindowDisplayPromise = new Promise<void>((resolve) => {
+  initialWindowDisplayPromiseResolve = resolve
+})
 
 async function scheduleLightweightMode(): Promise<void> {
   const {
@@ -76,9 +80,6 @@ function clearLightweightTimeout(): void {
 }
 
 ensureWindowsElevatedStartup(syncConfig.corePermissionMode, exitApp)
-
-const shouldDisableTunInDev =
-  process.platform === 'win32' && is.dev && syncConfig.corePermissionMode !== 'service'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -142,9 +143,6 @@ app.whenReady().then(async () => {
   electronApp.setAppUserModelId('sparkle.app')
   try {
     await initPromise
-    if (shouldDisableTunInDev) {
-      await patchControledMihomoConfig({ tun: { enable: false } })
-    }
   } catch (e) {
     dialog.showErrorBox('应用初始化失败', `${e}`)
     app.quit()
@@ -167,6 +165,9 @@ app.whenReady().then(async () => {
 
   const coreStartPromise = (async (): Promise<void> => {
     try {
+      if (is.dev) {
+        await initialWindowDisplayPromise
+      }
       const [startPromise] = await startCore()
       startPromise.then(async () => {
         await initProfileUpdater()
@@ -267,8 +268,12 @@ export async function createWindow(appConfig?: AppConfig): Promise<void> {
         windowShown = true
         mainWindow?.show()
         mainWindow?.focusOnWebView()
+        initialWindowDisplayPromiseResolve?.()
+        initialWindowDisplayPromiseResolve = null
       } else {
         await scheduleLightweightMode()
+        initialWindowDisplayPromiseResolve?.()
+        initialWindowDisplayPromiseResolve = null
       }
     })
     mainWindow.webContents.on('did-fail-load', () => {

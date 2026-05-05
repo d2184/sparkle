@@ -11,6 +11,7 @@ let serviceUnavailableFallbackHandler: ((reason: unknown) => Promise<void>) | nu
 let serviceUnavailableFallbackTimer: NodeJS.Timeout | null = null
 let serviceUnavailableFallbackPromise: Promise<void> | null = null
 const serviceUnavailableFallbackDelay = 12000
+const serviceUnavailableStatuses = [401, 403, 409, 503]
 
 export class ServiceAPIError extends Error {
   status?: number
@@ -171,6 +172,23 @@ export function isServiceConnectionError(error: unknown): boolean {
   ].some((fragment) => message.toLowerCase().includes(fragment.toLowerCase()))
 }
 
+function getServiceErrorStatus(error: unknown): number | undefined {
+  if (error instanceof ServiceAPIError) {
+    return error.status
+  }
+
+  const status = (error as { response?: { status?: unknown } })?.response?.status
+  return typeof status === 'number' ? status : undefined
+}
+
+export function isServiceUnavailableError(error: unknown): boolean {
+  const status = getServiceErrorStatus(error)
+  return (
+    isServiceConnectionError(error) ||
+    (status !== undefined && serviceUnavailableStatuses.includes(status))
+  )
+}
+
 function scheduleServiceUnavailableFallback(reason: unknown): void {
   if (serviceUnavailableFallbackTimer || serviceUnavailableFallbackPromise) return
 
@@ -183,7 +201,7 @@ function scheduleServiceUnavailableFallback(reason: unknown): void {
 }
 
 async function runServiceUnavailableFallback(reason: unknown): Promise<void> {
-  if (await isServiceReachable()) return
+  if (await isServiceUsable()) return
 
   if (!serviceUnavailableFallbackHandler) {
     await appendAppLog(`[Service]: service unavailable fallback handler is not registered\n`)
@@ -195,13 +213,14 @@ async function runServiceUnavailableFallback(reason: unknown): Promise<void> {
   )
 }
 
-async function isServiceReachable(): Promise<boolean> {
+async function isServiceUsable(): Promise<boolean> {
   try {
-    await axios.get('/ping', {
+    await axios.get('/test', {
       baseURL: 'http://localhost',
       socketPath: serviceIpcPath(),
+      headers: keyManager?.isInitialized() ? getServiceAuthHeaders('GET', '/test') : undefined,
       timeout: 1000,
-      validateStatus: () => true
+      validateStatus: (status) => status >= 200 && status < 300
     })
     return true
   } catch {
@@ -244,11 +263,13 @@ function createServiceAPIError(error: unknown): unknown {
 }
 
 function handleServiceAxiosError(error: unknown): Promise<never> {
-  if (isServiceConnectionError(error)) {
-    scheduleServiceUnavailableFallback(error)
+  const serviceError = createServiceAPIError(error)
+
+  if (isServiceUnavailableError(error) || isServiceUnavailableError(serviceError)) {
+    scheduleServiceUnavailableFallback(serviceError)
   }
 
-  return Promise.reject(createServiceAPIError(error))
+  return Promise.reject(serviceError)
 }
 
 export const initServiceAPI = (km: KeyManager): void => {

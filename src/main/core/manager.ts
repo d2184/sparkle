@@ -41,6 +41,7 @@ import {
   subscribeServiceCoreEventStream,
   setServiceUnavailableFallbackHandler,
   isServiceConnectionError,
+  isServiceUnavailableError,
   type ServiceCoreEvent,
   type ServiceCoreLaunchProfile
 } from '../service/api'
@@ -152,6 +153,11 @@ async function waitForServiceCoreConnection(
   await appendAppLog(
     `[Manager]: Service connection failed, waiting before fallback, ${initialError}\n`
   )
+
+  if (!isServiceConnectionError(initialError)) {
+    return { reachable: false, running: false, error: initialError }
+  }
+
   const startedAt = Date.now()
   let lastError = initialError
 
@@ -163,6 +169,9 @@ async function waitForServiceCoreConnection(
       return { reachable: true, running: true, error: lastError }
     } catch (error) {
       lastError = error
+      if (isServiceUnavailableError(error) && !isServiceConnectionError(error)) {
+        return { reachable: false, running: false, error }
+      }
       if (!isServiceConnectionError(error)) {
         return { reachable: true, running: false, error }
       }
@@ -215,7 +224,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
       await getCoreStatus()
       serviceCoreRunning = true
     } catch (error) {
-      if (isServiceConnectionError(error)) {
+      if (isServiceUnavailableError(error)) {
         const probe = await waitForServiceCoreConnection(error)
         if (!probe.reachable) {
           return fallbackToElevatedCore(detached, probe.error)
@@ -285,7 +294,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
         await startServiceCore(serviceProfile)
       }
     } catch (error) {
-      if (isServiceConnectionError(error)) {
+      if (isServiceUnavailableError(error)) {
         const probe = await waitForServiceCoreConnection(error)
         if (!probe.reachable) {
           return fallbackToElevatedCore(detached, probe.error)

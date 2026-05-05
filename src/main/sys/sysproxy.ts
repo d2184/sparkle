@@ -169,15 +169,18 @@ async function disableSysProxy(onlyActiveDevice: boolean, useRegistry = false): 
   const { sysProxy } = await getAppConfig()
   const { settingMode = 'exec' } = sysProxy
   const execFilePromise = promisify(execFile)
+  const disableWithExec = (): Promise<unknown> =>
+    execFilePromise(servicePath(), ['sysproxy', 'disable', ...registryArgs(useRegistry)])
 
   if (settingMode === 'service') {
     try {
       await disableProxy('', onlyActiveDevice, useRegistry)
     } catch (e) {
-      throw new Error('服务可能未安装')
+      await appendAppLog(`[Sysproxy]: disable via service failed, fallback to exec, ${e}\n`)
+      await disableWithExec()
     }
   } else {
-    await execFilePromise(servicePath(), ['sysproxy', 'disable', ...registryArgs(useRegistry)])
+    await disableWithExec()
   }
 }
 

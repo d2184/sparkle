@@ -31,7 +31,8 @@ const ProxyItem: React.FC<Props> = (props) => {
     onSelect,
     onProxyDelay
   } = props
-  const shouldShowGroupSelectedProxy = showGroupSelectedProxy && isGroup(proxy) && Boolean(proxy.now)
+  const shouldShowGroupSelectedProxy =
+    showGroupSelectedProxy && isGroup(proxy) && Boolean(proxy.now)
 
   const delay = useMemo(() => {
     if (proxy.history.length > 0) {

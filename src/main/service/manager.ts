@@ -5,11 +5,7 @@ import { initServiceAPI, getServiceAxios, ping, test, ServiceAPIError } from './
 import { getAppConfig, patchAppConfig } from '../config/app'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import {
-  loadServiceAuthSecret,
-  saveServiceAuthSecret,
-  type ServiceAuthSecret
-} from './auth-store'
+import { loadServiceAuthSecret, saveServiceAuthSecret, type ServiceAuthSecret } from './auth-store'
 
 let keyManager: KeyManager | null = null
 const execFilePromise = promisify(execFile)
