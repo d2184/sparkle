@@ -114,7 +114,6 @@ const ProfileCard: React.FC<Props> = (props) => {
                 <Button
                   isIconOnly
                   size="sm"
-                  title="查看当前运行时配置"
                   variant="light"
                   color="default"
                   onPress={() => {
@@ -207,7 +206,7 @@ const ProfileCard: React.FC<Props> = (props) => {
               </div>
             )}
             {extra && (
-              <Meter maxValue={total} value={usage}>
+              <Meter aria-label="流量用量" maxValue={total} value={usage}>
                 <Meter.Track
                   className={
                     match
@@ -253,7 +252,6 @@ const ProfileCard: React.FC<Props> = (props) => {
                 className="bg-transparent"
                 variant="flat"
                 color="default"
-                title="查看当前运行时配置"
                 onPress={() => {
                   setShowRuntimeConfig(true)
                 }}

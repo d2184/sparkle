@@ -215,7 +215,6 @@ const Profiles: React.FC = () => {
         <>
           <Button
             size="sm"
-            title="更新全部订阅"
             className="app-nodrag"
             variant="light"
             isIconOnly
@@ -237,7 +236,6 @@ const Profiles: React.FC = () => {
           </Button>
           <Button
             size="sm"
-            title="订阅设置"
             className="app-nodrag"
             variant="light"
             isIconOnly
@@ -317,7 +315,6 @@ const Profiles: React.FC = () => {
               <DropdownTrigger>
                 <Button
                   isLoading={subStoreImporting}
-                  title="Sub-Store"
                   className="ml-2 substore-import"
                   size="sm"
                   isIconOnly

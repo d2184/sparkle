@@ -355,7 +355,6 @@ const Proxies: React.FC = () => {
                       {groups[index].all.length}
                     </Chip>
                     <CollapseInput
-                      title="搜索节点"
                       value={searchValue[index]}
                       onValueChange={(v) => updateSearchValue(index, v)}
                     />

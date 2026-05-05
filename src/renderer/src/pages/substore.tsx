@@ -37,7 +37,6 @@ const SubStore: React.FC = () => {
         header={
           <div className="flex gap-2">
             <Button
-              title="检查更新"
               isIconOnly
               size="sm"
               className="app-nodrag"
@@ -66,7 +65,6 @@ const SubStore: React.FC = () => {
               <IoMdCloudDownload className="text-lg" />
             </Button>
             <Button
-              title="在浏览器中打开"
               isIconOnly
               size="sm"
               className="app-nodrag"

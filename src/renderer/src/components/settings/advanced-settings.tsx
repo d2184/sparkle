@@ -119,6 +119,7 @@ const AdvancedSettings: React.FC = () => {
         divider
       >
         <Select
+          aria-label="环境变量类型"
           classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
           className="w-37.5"
           size="sm"

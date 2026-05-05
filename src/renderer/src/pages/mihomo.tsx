@@ -194,7 +194,6 @@ const Mihomo: React.FC = () => {
               <Button
                 size="sm"
                 isIconOnly
-                title="升级内核"
                 variant="light"
                 isLoading={upgrading}
                 onPress={handleCoreUpgrade}

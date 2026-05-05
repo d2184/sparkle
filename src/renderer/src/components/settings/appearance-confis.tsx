@@ -302,7 +302,6 @@ const AppearanceConfig: React.FC = () => {
                 size="sm"
                 isLoading={fetching}
                 isIconOnly
-                title="拉取主题"
                 variant="light"
                 onPress={async () => {
                   setFetching(true)
@@ -321,7 +320,6 @@ const AppearanceConfig: React.FC = () => {
               <Button
                 size="sm"
                 isIconOnly
-                title="导入主题"
                 variant="light"
                 onPress={async () => {
                   const files = await getFilePath(['css'])
@@ -339,7 +337,6 @@ const AppearanceConfig: React.FC = () => {
               <Button
                 size="sm"
                 isIconOnly
-                title="编辑主题"
                 variant="light"
                 onPress={async () => {
                   setOpenCSSEditor(true)
@@ -352,6 +349,7 @@ const AppearanceConfig: React.FC = () => {
         >
           {customThemes && (
             <Select
+              aria-label="自定义主题"
               classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
               className="w-[60%]"
               size="sm"

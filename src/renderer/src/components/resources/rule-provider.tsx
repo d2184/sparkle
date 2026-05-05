@@ -163,7 +163,6 @@ const RuleProvider: React.FC = () => {
               )}
               <Button
                 isIconOnly
-                title="更新"
                 className="ml-2"
                 size="sm"
                 onPress={() => {

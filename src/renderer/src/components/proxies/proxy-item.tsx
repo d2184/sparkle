@@ -78,7 +78,6 @@ const ProxyItem: React.FC<Props> = (props) => {
                 {fixed && (
                   <Button
                     isIconOnly
-                    title="取消固定"
                     color="danger"
                     onPress={async () => {
                       await mihomoUnfixedProxy(group.name)
@@ -92,7 +91,6 @@ const ProxyItem: React.FC<Props> = (props) => {
                 )}
                 <Button
                   isIconOnly
-                  title={proxy.type}
                   isLoading={loading}
                   color={delayColor(delay)}
                   onPress={onDelay}
@@ -106,13 +104,9 @@ const ProxyItem: React.FC<Props> = (props) => {
           ) : (
             <>
               <div className="text-ellipsis overflow-hidden whitespace-nowrap">
-                <div className="flag-emoji inline" title={proxy.name}>
-                  {proxy.name}
-                </div>
+                <div className="flag-emoji inline">{proxy.name}</div>
                 {proxyDisplayLayout === 'single' && (
-                  <div className="inline ml-2 text-foreground-500" title={proxy.type}>
-                    {proxy.type}
-                  </div>
+                  <div className="inline ml-2 text-foreground-500">{proxy.type}</div>
                 )}
               </div>
               <div className="flex items-center gap-0.5 shrink-0">
@@ -120,7 +114,6 @@ const ProxyItem: React.FC<Props> = (props) => {
                   <div className="flex items-center">
                     <Button
                       isIconOnly
-                      title="取消固定"
                       color="danger"
                       onPress={async () => {
                         await mihomoUnfixedProxy(group.name)
@@ -136,7 +129,6 @@ const ProxyItem: React.FC<Props> = (props) => {
                 <div className="flex items-center">
                   <Button
                     isIconOnly
-                    title={proxy.type}
                     isLoading={loading}
                     color={delayColor(delay)}
                     onPress={onDelay}

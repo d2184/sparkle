@@ -56,7 +56,6 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
               size="sm"
               className="app-nodrag"
               isIconOnly
-              title="窗口置顶"
               variant="light"
               color={onTop ? 'primary' : 'default'}
               onPress={async () => {

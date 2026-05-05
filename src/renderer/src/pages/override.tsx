@@ -143,7 +143,6 @@ const Override: React.FC = () => {
           <Button
             size="sm"
             variant="light"
-            title="使用文档"
             isIconOnly
             className="app-nodrag"
             onPress={() => {
@@ -154,7 +153,6 @@ const Override: React.FC = () => {
           </Button>
           <Button
             className="app-nodrag"
-            title="常用覆写仓库"
             isIconOnly
             variant="light"
             size="sm"

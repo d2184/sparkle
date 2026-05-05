@@ -347,7 +347,7 @@ const ProfileItem: React.FC<Props> = (props) => {
               </div>
             )}
             {extra && (
-              <Meter maxValue={total} value={usage}>
+              <Meter aria-label="流量用量" maxValue={total} value={usage}>
                 <Meter.Track
                   className={
                     isCurrent

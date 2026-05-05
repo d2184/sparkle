@@ -2,12 +2,10 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Input, InputProps } from '@heroui/react'
 import { FaSearch } from 'react-icons/fa'
 
-interface CollapseInputProps extends InputProps {
-  title: string
-}
+type CollapseInputProps = InputProps
 
 const CollapseInput: React.FC<CollapseInputProps> = (props) => {
-  const { title, value, onChange, onValueChange, ...inputProps } = props
+  const { value, onChange, onValueChange, ...inputProps } = props
   const inputRef = useRef<HTMLInputElement>(null)
   const composingRef = useRef(false)
   const [internalValue, setInternalValue] = useState<string>((value as string) ?? '')
@@ -60,7 +58,7 @@ const CollapseInput: React.FC<CollapseInputProps> = (props) => {
               }
             }}
           >
-            <FaSearch title={title} />
+            <FaSearch />
           </div>
         }
         onClick={(e) => {
