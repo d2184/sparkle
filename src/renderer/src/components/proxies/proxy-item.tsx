@@ -147,4 +147,4 @@ const ProxyItem: React.FC<Props> = (props) => {
   )
 }
 
-export default ProxyItem
+export default React.memo(ProxyItem)
