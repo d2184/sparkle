@@ -155,6 +155,18 @@ const GroupHeader = memo(function GroupHeader({
   )
 })
 
+interface ProxyGroupPageCache {
+  isOpen: Record<string, boolean>
+  searchValue: Record<string, string>
+  scrollTop: number
+}
+
+const proxyGroupPageCache: ProxyGroupPageCache = {
+  isOpen: {},
+  searchValue: {},
+  scrollTop: 0
+}
+
 const Proxies: React.FC = () => {
   const { controledMihomoConfig } = useControledMihomoConfig()
   const { mode = 'rule' } = controledMihomoConfig || {}
@@ -170,31 +182,87 @@ const Proxies: React.FC = () => {
     proxyCols = 'auto',
     delayTestUrlScope = 'group',
     delayTestUseGroupApi = false,
-    delayTestConcurrency
+    delayTestConcurrency,
+    rememberProxyGroupOpenState = false
   } = appConfig || {}
   const [cols, setCols] = useState(1)
-  const [isOpen, setIsOpen] = useState(Array(groups.length).fill(false))
-  const [isOpenContent, setIsOpenContent] = useState(Array(groups.length).fill(false))
-  const isOpenContentRef = useRef<boolean[]>([])
+  const [isOpen, setIsOpen] = useState<boolean[]>(() => {
+    if (
+      rememberProxyGroupOpenState &&
+      groups.length > 0 &&
+      Object.keys(proxyGroupPageCache.isOpen).length > 0
+    ) {
+      return groups.map((group) => proxyGroupPageCache.isOpen[group.name] ?? false)
+    }
+    return Array(groups.length).fill(false)
+  })
+  const [isOpenContent, setIsOpenContent] = useState<boolean[]>(isOpen)
+  const isOpenContentRef = useRef<boolean[]>(isOpen)
   isOpenContentRef.current = isOpenContent
   const [delaying, setDelaying] = useState(Array(groups.length).fill(false))
-  const [searchValue, setSearchValue] = useState(Array(groups.length).fill(''))
+  const [searchValue, setSearchValue] = useState<string[]>(() => {
+    if (
+      rememberProxyGroupOpenState &&
+      groups.length > 0 &&
+      Object.keys(proxyGroupPageCache.searchValue).length > 0
+    ) {
+      return groups.map((group) => proxyGroupPageCache.searchValue[group.name] ?? '')
+    }
+    return Array(groups.length).fill('')
+  })
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
+  const [initialScrollTop] = useState(() =>
+    rememberProxyGroupOpenState ? proxyGroupPageCache.scrollTop : 0
+  )
   const virtuosoRef = useRef<GroupedVirtuosoHandle>(null)
   const pendingScrollRef = useRef<number | null>(null)
+  const scrollerElRef = useRef<HTMLElement | null>(null)
+  const rememberProxyGroupOpenStateRef = useRef(rememberProxyGroupOpenState)
+  rememberProxyGroupOpenStateRef.current = rememberProxyGroupOpenState
+
+  const scrollerRef = useCallback((el: Window | HTMLElement | null) => {
+    if (scrollerElRef.current) {
+      if (rememberProxyGroupOpenStateRef.current && scrollerElRef.current.isConnected) {
+        proxyGroupPageCache.scrollTop = scrollerElRef.current.scrollTop
+      }
+      scrollerElRef.current.onscroll = null
+    }
+    scrollerElRef.current = el instanceof HTMLElement ? el : null
+    if (scrollerElRef.current) {
+      const htmlEl = scrollerElRef.current
+      htmlEl.onscroll = () => {
+        if (rememberProxyGroupOpenStateRef.current) {
+          proxyGroupPageCache.scrollTop = htmlEl.scrollTop
+        }
+      }
+    }
+  }, [])
 
   useEffect(() => {
-    setIsOpen((prev) =>
-      prev.length === groups.length ? prev : groups.map((_, index) => prev[index] || false)
-    )
-    setIsOpenContent((prev) =>
-      prev.length === groups.length ? prev : groups.map((_, index) => prev[index] || false)
-    )
+    const openUpdater = (prev: boolean[]): boolean[] => {
+      if (prev.length === groups.length) return prev
+      if (
+        rememberProxyGroupOpenStateRef.current &&
+        Object.keys(proxyGroupPageCache.isOpen).length > 0
+      ) {
+        return groups.map((group) => proxyGroupPageCache.isOpen[group.name] ?? false)
+      }
+      return groups.map((_, index) => prev[index] ?? false)
+    }
+    setIsOpen(openUpdater)
+    setIsOpenContent(openUpdater)
+    setSearchValue((prev) => {
+      if (prev.length === groups.length) return prev
+      if (
+        rememberProxyGroupOpenStateRef.current &&
+        Object.keys(proxyGroupPageCache.searchValue).length > 0
+      ) {
+        return groups.map((group) => proxyGroupPageCache.searchValue[group.name] ?? '')
+      }
+      return groups.map((_, index) => prev[index] ?? '')
+    })
     setDelaying((prev) =>
       prev.length === groups.length ? prev : groups.map((_, index) => prev[index] || false)
-    )
-    setSearchValue((prev) =>
-      prev.length === groups.length ? prev : groups.map((_, index) => prev[index] || '')
     )
   }, [groups])
 
@@ -273,6 +341,9 @@ const Proxies: React.FC = () => {
       if (proxies.length === 0) return
 
       if (openedProxies.length === 0) {
+        if (rememberProxyGroupOpenStateRef.current) {
+          proxyGroupPageCache.isOpen[group.name] = true
+        }
         setIsOpen((prev) => {
           const newOpen = [...prev]
           newOpen[index] = true
@@ -334,9 +405,14 @@ const Proxies: React.FC = () => {
   }, [])
 
   const toggleOpen = useCallback((index: number, currentlyOpen: boolean) => {
+    const newVal = !currentlyOpen
+    if (rememberProxyGroupOpenStateRef.current) {
+      const groupName = groupsRef.current[index]?.name
+      if (groupName) proxyGroupPageCache.isOpen[groupName] = newVal
+    }
     setIsOpen((prev) => {
       const newOpen = [...prev]
-      newOpen[index] = !currentlyOpen
+      newOpen[index] = newVal
       return newOpen
     })
     if (currentlyOpen) {
@@ -357,6 +433,10 @@ const Proxies: React.FC = () => {
   }, [])
 
   const updateSearchValue = useCallback((index: number, value: string) => {
+    if (rememberProxyGroupOpenStateRef.current) {
+      const groupName = groupsRef.current[index]?.name
+      if (groupName) proxyGroupPageCache.searchValue[groupName] = value
+    }
     setSearchValue((prev) => {
       const newSearchValue = [...prev]
       newSearchValue[index] = value
@@ -365,6 +445,10 @@ const Proxies: React.FC = () => {
     if (value) {
       setIsOpen((prev) => {
         if (prev[index]) return prev
+        if (rememberProxyGroupOpenStateRef.current) {
+          const groupName = groupsRef.current[index]?.name
+          if (groupName) proxyGroupPageCache.isOpen[groupName] = true
+        }
         const newOpen = [...prev]
         newOpen[index] = true
         return newOpen
@@ -443,8 +527,6 @@ const Proxies: React.FC = () => {
   // stable refs for Virtuoso callbacks
   const groupsRef = useRef(groups)
   groupsRef.current = groups
-  const isOpenRef = useRef(isOpen)
-  isOpenRef.current = isOpen
   const groupDisplayLayoutRef = useRef(groupDisplayLayout)
   groupDisplayLayoutRef.current = groupDisplayLayout
   const searchValueRef = useRef(searchValue)
@@ -603,6 +685,8 @@ const Proxies: React.FC = () => {
         <div className="h-[calc(100vh-50px)]">
           <GroupedVirtuoso
             ref={virtuosoRef}
+            scrollerRef={scrollerRef}
+            initialScrollTop={initialScrollTop}
             groupCounts={groupCounts}
             groupContent={groupContent}
             itemContent={itemContent}

@@ -99,6 +99,7 @@ interface AppConfig {
   delayTestUrlScope?: 'group' | 'global'
   delayTestTimeout?: number
   encryptedPassword?: number[]
+  rememberProxyGroupOpenState?: boolean
   controlDns?: boolean
   controlSniff?: boolean
   useDockIcon?: boolean

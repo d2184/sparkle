@@ -77,7 +77,8 @@ function clearLightweightTimeout(): void {
 
 ensureWindowsElevatedStartup(syncConfig.corePermissionMode, exitApp)
 
-const shouldDisableTunInDev = process.platform === 'win32' && is.dev
+const shouldDisableTunInDev =
+  process.platform === 'win32' && is.dev && syncConfig.corePermissionMode !== 'service'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
