@@ -62,6 +62,7 @@ const Proxies: React.FC = () => {
   const [searchValue, setSearchValue] = useState(Array(groups.length).fill(''))
   const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
   const virtuosoRef = useRef<GroupedVirtuosoHandle>(null)
+  const pendingScrollRef = useRef<number | null>(null)
 
   useEffect(() => {
     setIsOpen((prev) =>
@@ -217,17 +218,18 @@ const Proxies: React.FC = () => {
       newSearchValue[index] = value
       return newSearchValue
     })
+    if (value) {
+      setIsOpen((prev) => {
+        if (prev[index]) return prev
+        const newOpen = [...prev]
+        newOpen[index] = true
+        return newOpen
+      })
+    }
   }, [])
 
-  const scrollToCurrentProxy = useCallback(
+  const doScrollToCurrentProxy = useCallback(
     (index: number) => {
-      if (!isOpen[index]) {
-        setIsOpen((prev) => {
-          const newOpen = [...prev]
-          newOpen[index] = true
-          return newOpen
-        })
-      }
       let i = 0
       for (let j = 0; j < index; j++) {
         i += groupCounts[j]
@@ -236,10 +238,35 @@ const Proxies: React.FC = () => {
       i += Math.floor(proxies.findIndex((proxy) => proxy.name === groups[index].now) / cols)
       virtuosoRef.current?.scrollToIndex({
         index: Math.floor(i),
-        align: 'start'
+        align: 'start',
+        behavior: 'smooth'
       })
     },
-    [isOpen, groupCounts, allProxies, groups, cols]
+    [groupCounts, allProxies, groups, cols]
+  )
+
+  useEffect(() => {
+    if (pendingScrollRef.current !== null && isOpen[pendingScrollRef.current]) {
+      const index = pendingScrollRef.current
+      pendingScrollRef.current = null
+      setTimeout(() => doScrollToCurrentProxy(index), 150)
+    }
+  }, [isOpen, doScrollToCurrentProxy])
+
+  const scrollToCurrentProxy = useCallback(
+    (index: number) => {
+      if (!isOpen[index]) {
+        pendingScrollRef.current = index
+        setIsOpen((prev) => {
+          const newOpen = [...prev]
+          newOpen[index] = true
+          return newOpen
+        })
+      } else {
+        doScrollToCurrentProxy(index)
+      }
+    },
+    [isOpen, doScrollToCurrentProxy]
   )
 
   useEffect(() => {
@@ -333,7 +360,6 @@ const Proxies: React.FC = () => {
                       onValueChange={(v) => updateSearchValue(index, v)}
                     />
                     <Button
-                      title="定位到当前节点"
                       variant="light"
                       size="sm"
                       isIconOnly
@@ -342,7 +368,6 @@ const Proxies: React.FC = () => {
                       <FaLocationCrosshairs className="text-lg text-foreground-500" />
                     </Button>
                     <Button
-                      title="延迟测试"
                       variant="light"
                       isLoading={delaying[index]}
                       size="sm"
@@ -443,7 +468,6 @@ const Proxies: React.FC = () => {
           isIconOnly
           variant="light"
           className="app-nodrag"
-          title="代理组设置"
           onPress={() => setIsSettingModalOpen(true)}
         >
           <MdTune className="text-lg" />

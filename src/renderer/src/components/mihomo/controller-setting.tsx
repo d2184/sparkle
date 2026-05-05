@@ -240,6 +240,7 @@ const ControllerSetting: React.FC = () => {
                   </Button>
                 )}
                 <Select
+                  aria-label="外部 UI 来源"
                   classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
                   className="w-37.5"
                   size="sm"

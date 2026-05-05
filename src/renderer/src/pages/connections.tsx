@@ -704,6 +704,7 @@ const Connections: React.FC = () => {
                 isIconOnly
                 size="sm"
                 variant="light"
+                aria-label={tab === 'active' ? '关闭所有连接' : '清空记录'}
                 onPress={() => {
                   if (filter === '') {
                     closeAllConnections()
@@ -727,6 +728,7 @@ const Connections: React.FC = () => {
             isIconOnly
             className="app-nodrag ml-2"
             variant="light"
+            aria-label={paused ? '继续' : '暂停'}
             onPress={() =>
               setPaused((p) => {
                 pausedRef.current = !p
@@ -741,6 +743,7 @@ const Connections: React.FC = () => {
             isIconOnly
             className="app-nodrag"
             variant="light"
+            aria-label="连接设置"
             onPress={() => setIsSettingModalOpen(true)}
           >
             <MdTune className="text-lg" />
@@ -860,6 +863,7 @@ const Connections: React.FC = () => {
           </Tooltip>
 
           <Select
+            aria-label="排序字段"
             classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
             size="sm"
             className="w-34 min-w-24 shrink-0"
@@ -874,7 +878,13 @@ const Connections: React.FC = () => {
             <SelectItem key="time">时间</SelectItem>
             <SelectItem key="process">进程名称</SelectItem>
           </Select>
-          <Button size="sm" isIconOnly className="bg-content2" onPress={handleDirectionToggle}>
+          <Button
+            size="sm"
+            isIconOnly
+            className="bg-content2"
+            aria-label={connectionDirection === 'asc' ? '升序' : '降序'}
+            onPress={handleDirectionToggle}
+          >
             {connectionDirection === 'asc' ? (
               <HiSortAscending className="text-lg" />
             ) : (

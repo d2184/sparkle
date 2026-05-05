@@ -111,6 +111,7 @@ const ConnectionItemComponent: React.FC<Props> = ({
                 variant="light"
                 isIconOnly
                 size="sm"
+                aria-label={info.isActive ? '关闭连接' : '删除记录'}
                 className="absolute right-2 transform"
                 onPress={handleClose}
               >
