@@ -2,11 +2,7 @@ import { existsSync } from 'fs'
 import { mkdir, readFile, rename, unlink, writeFile } from 'fs/promises'
 import { dirname } from 'path'
 import { serviceAuthStorePath } from '../utils/dirs'
-import {
-  decryptStringStrict,
-  encryptStringStrict,
-  isSecureStorageAvailable
-} from '../utils/encrypt'
+import { decryptLegacyString } from '../utils/encrypt'
 import { computeKeyId, type KeyPair } from './key'
 
 interface EncryptedServiceAuthEnvelope {
@@ -48,14 +44,6 @@ function normalizeServiceAuthSecret(secret: {
   }
 }
 
-function usePlainServiceAuthStorage(): boolean {
-  return process.platform === 'linux'
-}
-
-export function canPersistServiceAuthSecret(): boolean {
-  return usePlainServiceAuthStorage() || isSecureStorageAvailable()
-}
-
 export async function loadServiceAuthSecret(): Promise<ServiceAuthSecret | null> {
   const storePath = serviceAuthStorePath()
 
@@ -70,43 +58,31 @@ export async function loadServiceAuthSecret(): Promise<ServiceAuthSecret | null>
   }
 
   const envelope = JSON.parse(raw) as Partial<ServiceAuthEnvelope>
-  if (usePlainServiceAuthStorage()) {
-    if (envelope.version === 2 && envelope.storage === 'plain') {
-      return normalizeServiceAuthSecret(envelope)
-    }
-    throw new Error('Linux 仅支持明文服务鉴权密钥，请重新初始化服务')
-  }
-
   if (envelope.version === 2 && envelope.storage === 'plain') {
-    throw new Error('当前平台不允许明文服务鉴权密钥')
+    return normalizeServiceAuthSecret(envelope)
   }
 
-  if (envelope.version !== 1 || typeof envelope.ciphertext !== 'string' || !envelope.ciphertext) {
-    throw new Error('服务鉴权存储格式无效')
+  // Compatibility shim for the safeStorage-backed v1 auth store.
+  // TODO(next version): remove this migration and keep only the plaintext v2 envelope.
+  if (envelope.version === 1 && typeof envelope.ciphertext === 'string' && envelope.ciphertext) {
+    const payload = decryptLegacyString(envelope.ciphertext)
+    const secret = normalizeServiceAuthSecret(JSON.parse(payload) as Partial<ServiceAuthSecret>)
+    await saveServiceAuthSecret(secret)
+    return secret
   }
 
-  const payload = decryptStringStrict(envelope.ciphertext)
-  return normalizeServiceAuthSecret(JSON.parse(payload) as Partial<ServiceAuthSecret>)
+  throw new Error('服务鉴权存储格式无效')
 }
 
 export async function saveServiceAuthSecret(secret: ServiceAuthSecret): Promise<void> {
-  if (!canPersistServiceAuthSecret()) {
-    throw new Error('当前系统安全存储不可用，无法保存服务鉴权密钥')
-  }
-
   const normalizedSecret = normalizeServiceAuthSecret(secret)
   const storePath = serviceAuthStorePath()
   const tempPath = `${storePath}.tmp`
-  const envelope: ServiceAuthEnvelope = usePlainServiceAuthStorage()
-    ? {
-        version: 2,
-        storage: 'plain',
-        ...normalizedSecret
-      }
-    : {
-        version: 1,
-        ciphertext: encryptStringStrict(JSON.stringify(normalizedSecret))
-      }
+  const envelope: ServiceAuthEnvelope = {
+    version: 2,
+    storage: 'plain',
+    ...normalizedSecret
+  }
   const content = JSON.stringify(envelope, null, 2)
 
   await mkdir(dirname(storePath), { recursive: true })
