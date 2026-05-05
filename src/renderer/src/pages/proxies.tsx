@@ -121,6 +121,7 @@ const GroupHeader = memo(function GroupHeader({
                 className="flex items-center"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
               >
                 <Chip size="sm" className="my-1 mr-2">
                   {group.all.length}
