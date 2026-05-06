@@ -50,9 +50,11 @@ const ProxyItem: React.FC<Props> = (props) => {
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const touchStartPos = useRef<{ x: number; y: number } | null>(null)
   const touchTriggeredRef = useRef(false)
+  const lastTouchTime = useRef(0)
   const [showTooltip, setShowTooltip] = useState(false)
 
   const handleMouseEnter = useCallback(() => {
+    if (Date.now() - lastTouchTime.current < 1000) return
     hoverTimerRef.current = setTimeout(() => {
       setShowTooltip(true)
     }, 600)
@@ -69,6 +71,7 @@ const ProxyItem: React.FC<Props> = (props) => {
   }, [])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    lastTouchTime.current = Date.now()
     const touch = e.touches[0]
     touchStartPos.current = { x: touch.clientX, y: touch.clientY }
     touchTriggeredRef.current = false
@@ -166,7 +169,13 @@ const ProxyItem: React.FC<Props> = (props) => {
     >
       <Card
         as="div"
-        onPress={() => onSelect(group.name, proxy.name)}
+        onPress={() => {
+          if (touchTriggeredRef.current) {
+            touchTriggeredRef.current = false
+            return
+          }
+          onSelect(group.name, proxy.name)
+        }}
         isPressable
         fullWidth
         shadow="sm"
