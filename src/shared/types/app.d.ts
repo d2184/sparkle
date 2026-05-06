@@ -34,6 +34,7 @@ interface AppConfig {
   proxyDisplayLayout: 'hidden' | 'single' | 'double'
   groupDisplayLayout: 'hidden' | 'single' | 'double'
   showGroupSelectedProxy: boolean
+  showProxyDetailTooltip: boolean
   profileDisplayDate?: 'expire' | 'update'
   envType?: ('bash' | 'fish' | 'cmd' | 'powershell' | 'nushell')[]
   proxyCols: 'auto' | '1' | '2' | '3' | '4'

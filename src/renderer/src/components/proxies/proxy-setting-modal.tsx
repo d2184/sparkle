@@ -25,6 +25,7 @@ const ProxySettingModal: React.FC<Props> = (props) => {
     groupDisplayLayout = 'single',
     proxyDisplayLayout = 'double',
     showGroupSelectedProxy = true,
+    showProxyDetailTooltip = false,
     autoCloseConnection = true,
     closeMode = 'all',
     delayTestUrl,
@@ -121,9 +122,9 @@ const ProxySettingModal: React.FC<Props> = (props) => {
                   }}
                 />
               </SettingItem>
-              <SettingItem title="代理组详细信息" {...settingItemProps} divider>
+              <SettingItem title="代理组额外信息" {...settingItemProps} divider>
                 <SettingTabs
-                  ariaLabel="代理组详细信息"
+                  ariaLabel="代理组额外信息"
                   selectedKey={groupDisplayLayout}
                   options={[
                     { id: 'hidden', label: '隐藏' },
@@ -137,9 +138,9 @@ const ProxySettingModal: React.FC<Props> = (props) => {
                   }}
                 />
               </SettingItem>
-              <SettingItem title="代理节点详细信息" {...settingItemProps} divider>
+              <SettingItem title="代理节点额外信息" {...settingItemProps} divider>
                 <SettingTabs
-                  ariaLabel="代理节点详细信息"
+                  ariaLabel="代理节点额外信息"
                   selectedKey={proxyDisplayLayout}
                   options={[
                     { id: 'hidden', label: '隐藏' },
@@ -159,6 +160,19 @@ const ProxySettingModal: React.FC<Props> = (props) => {
                   isSelected={showGroupSelectedProxy}
                   onChange={(v) => {
                     patchAppConfig({ showGroupSelectedProxy: v })
+                  }}
+                >
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                </Switch>
+              </SettingItem>
+              <SettingItem title="悬停显示节点详情" {...settingItemProps} divider>
+                <Switch
+                  aria-label="悬停显示节点详情"
+                  isSelected={showProxyDetailTooltip}
+                  onChange={(v) => {
+                    patchAppConfig({ showProxyDetailTooltip: v })
                   }}
                 >
                   <Switch.Control>
