@@ -17,7 +17,7 @@ import { calcTraffic } from '@renderer/utils/calc'
 import ConnectionItem from '@renderer/components/connections/connection-item'
 import { Virtuoso } from 'react-virtuoso'
 import ConnectionDetailModal from '@renderer/components/connections/connection-detail-modal'
-import ConnectionSettingModal from '@renderer/components/connections/connection-setting-modal'
+import ConnectionSettingDrawer from '@renderer/components/connections/connection-setting-drawer'
 import { CgClose, CgTrash } from 'react-icons/cg'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { includesIgnoreCase } from '@renderer/utils/includes'
@@ -56,7 +56,8 @@ const Connections: React.FC = () => {
   const [activeConnections, setActiveConnections] = useState<ControllerConnectionDetail[]>([])
   const [closedConnections, setClosedConnections] = useState<ControllerConnectionDetail[]>([])
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
+  const [isSettingDrawerOpen, setIsSettingDrawerOpen] = useState(false)
+  const [settingDrawerReopenSignal, setSettingDrawerReopenSignal] = useState(0)
   const [selected, setSelected] = useState<ControllerConnectionDetail>()
 
   const [iconMap, setIconMap] = useState<Record<string, string>>({})
@@ -744,7 +745,10 @@ const Connections: React.FC = () => {
             className="app-nodrag"
             variant="light"
             aria-label="连接设置"
-            onPress={() => setIsSettingModalOpen(true)}
+            onPress={() => {
+              setIsSettingDrawerOpen(true)
+              setSettingDrawerReopenSignal((signal) => signal + 1)
+            }}
           >
             <MdTune className="text-lg" />
           </Button>
@@ -754,8 +758,11 @@ const Connections: React.FC = () => {
       {isDetailModalOpen && selected && (
         <ConnectionDetailModal onClose={() => setIsDetailModalOpen(false)} connection={selected} />
       )}
-      {isSettingModalOpen && (
-        <ConnectionSettingModal onClose={() => setIsSettingModalOpen(false)} />
+      {isSettingDrawerOpen && (
+        <ConnectionSettingDrawer
+          reopenSignal={settingDrawerReopenSignal}
+          onClose={() => setIsSettingDrawerOpen(false)}
+        />
       )}
       <div className="overflow-x-auto sticky top-0 z-40">
         <div className="flex p-2 gap-2">

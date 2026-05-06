@@ -13,7 +13,7 @@ import { FaLocationCrosshairs } from 'react-icons/fa6'
 import { memo, useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from 'react'
 import { GroupedVirtuoso, GroupedVirtuosoHandle } from 'react-virtuoso'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
-import ProxySettingModal from '@renderer/components/proxies/proxy-setting-modal'
+import ProxySettingDrawer from '@renderer/components/proxies/proxy-setting-drawer'
 import { IoIosArrowBack } from 'react-icons/io'
 import { MdDoubleArrow, MdOutlineSpeed, MdTune } from 'react-icons/md'
 import { useGroups } from '@renderer/hooks/use-groups'
@@ -212,7 +212,8 @@ const Proxies: React.FC = () => {
     }
     return Array(groups.length).fill('')
   })
-  const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
+  const [isSettingDrawerOpen, setIsSettingDrawerOpen] = useState(false)
+  const [settingDrawerReopenSignal, setSettingDrawerReopenSignal] = useState(0)
   const [initialScrollTop] = useState(() =>
     rememberProxyGroupOpenState ? proxyGroupPageCache.scrollTop : 0
   )
@@ -673,13 +674,21 @@ const Proxies: React.FC = () => {
           isIconOnly
           variant="light"
           className="app-nodrag"
-          onPress={() => setIsSettingModalOpen(true)}
+          onPress={() => {
+            setIsSettingDrawerOpen(true)
+            setSettingDrawerReopenSignal((signal) => signal + 1)
+          }}
         >
           <MdTune className="text-lg" />
         </Button>
       }
     >
-      {isSettingModalOpen && <ProxySettingModal onClose={() => setIsSettingModalOpen(false)} />}
+      {isSettingDrawerOpen && (
+        <ProxySettingDrawer
+          reopenSignal={settingDrawerReopenSignal}
+          onClose={() => setIsSettingDrawerOpen(false)}
+        />
+      )}
       {mode === 'direct' ? (
         <div className="h-full w-full flex justify-center items-center">
           <div className="flex flex-col items-center">

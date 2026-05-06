@@ -24,7 +24,7 @@ import { FaPlus } from 'react-icons/fa6'
 import { IoMdRefresh } from 'react-icons/io'
 import { MdTune } from 'react-icons/md'
 import SubStoreIcon from '@renderer/components/base/substore-icon'
-import ProfileSettingModal from '@renderer/components/profiles/profile-setting-modal'
+import ProfileSettingDrawer from '@renderer/components/profiles/profile-setting-drawer'
 import useSWR from 'swr'
 import { useNavigate } from 'react-router-dom'
 import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
@@ -55,7 +55,8 @@ const Profiles: React.FC = () => {
   const [switching, setSwitching] = useState(false)
   const [fileOver, setFileOver] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [isSettingModalOpen, setIsSettingModalOpen] = useState(false)
+  const [isSettingDrawerOpen, setIsSettingDrawerOpen] = useState(false)
+  const [settingDrawerReopenSignal, setSettingDrawerReopenSignal] = useState(0)
   const [editingItem, setEditingItem] = useState<ProfileItem | null>(null)
   const [url, setUrl] = useState('')
   const isUrlEmpty = url.trim() === ''
@@ -240,14 +241,22 @@ const Profiles: React.FC = () => {
             className="app-nodrag"
             variant="light"
             isIconOnly
-            onPress={() => setIsSettingModalOpen(true)}
+            onPress={() => {
+              setIsSettingDrawerOpen(true)
+              setSettingDrawerReopenSignal((signal) => signal + 1)
+            }}
           >
             <MdTune className="text-lg" />
           </Button>
         </>
       }
     >
-      {isSettingModalOpen && <ProfileSettingModal onClose={() => setIsSettingModalOpen(false)} />}
+      {isSettingDrawerOpen && (
+        <ProfileSettingDrawer
+          reopenSignal={settingDrawerReopenSignal}
+          onClose={() => setIsSettingDrawerOpen(false)}
+        />
+      )}
       {showEditModal && editingItem && (
         <EditInfoModal
           item={editingItem}

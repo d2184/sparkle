@@ -13,12 +13,13 @@ import {
 
 interface Props {
   onClose: () => void
+  reopenSignal?: number
 }
 
 const DRAWER_CLOSE_ANIMATION_MS = 700
 
-const ProxySettingModal: React.FC<Props> = (props) => {
-  const { onClose } = props
+const ProxySettingDrawer: React.FC<Props> = (props) => {
+  const { onClose, reopenSignal } = props
   const { appConfig, patchAppConfig } = useAppConfig()
 
   const {
@@ -60,11 +61,20 @@ const ProxySettingModal: React.FC<Props> = (props) => {
     }
   }, [])
 
+  useEffect(() => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+    setIsOpen(true)
+  }, [reopenSignal])
+
   const closeWithAnimation = (): void => {
     if (closeTimer.current) return
 
     setIsOpen(false)
     closeTimer.current = setTimeout(() => {
+      closeTimer.current = null
       onClose()
     }, DRAWER_CLOSE_ANIMATION_MS)
   }
@@ -332,4 +342,4 @@ const ProxySettingModal: React.FC<Props> = (props) => {
   )
 }
 
-export default ProxySettingModal
+export default ProxySettingDrawer
