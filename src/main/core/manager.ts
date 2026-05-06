@@ -8,7 +8,7 @@ import {
   patchAppConfig,
   patchControledMihomoConfig
 } from '../config'
-import { app, dialog, ipcMain, Notification } from 'electron'
+import { app, ipcMain } from 'electron'
 import {
   startMihomoTraffic,
   startMihomoConnections,
@@ -45,7 +45,9 @@ import {
   type ServiceCoreEvent,
   type ServiceCoreLaunchProfile
 } from '../service/api'
+import { serviceStatus } from '../service/manager'
 import { appendAppLog, createLogWritable, setMihomoLogSource } from '../utils/log'
+import { showNotification } from '../utils/notification'
 import { createCoreHookWaiter, createCoreStartupHook } from './startupHook'
 import { stopChildProcess } from './process-control'
 import {
@@ -158,6 +160,12 @@ async function waitForServiceCoreConnection(
     return { reachable: false, running: false, error: initialError }
   }
 
+  const status = await getServiceStatusAfterConnectionError()
+  if (status && status !== 'running') {
+    await appendAppLog(`[Manager]: Service status is ${status}, fallback immediately\n`)
+    return { reachable: false, running: false, error: initialError }
+  }
+
   const startedAt = Date.now()
   let lastError = initialError
 
@@ -182,6 +190,17 @@ async function waitForServiceCoreConnection(
     `[Manager]: Service still unavailable after ${serviceConnectionRetryTimeout}ms, ${lastError}\n`
   )
   return { reachable: false, running: false, error: lastError }
+}
+
+async function getServiceStatusAfterConnectionError(): Promise<
+  Awaited<ReturnType<typeof serviceStatus>> | undefined
+> {
+  try {
+    return await serviceStatus()
+  } catch (error) {
+    await appendAppLog(`[Manager]: query service status failed before fallback, ${error}\n`)
+    return undefined
+  }
 }
 
 export async function startCore(detached = false): Promise<Promise<void>[]> {
@@ -364,7 +383,7 @@ export async function startCore(detached = false): Promise<Promise<void>[]> {
         const promises = await startCore()
         await Promise.all(promises)
       } catch (e) {
-        dialog.showErrorBox('内核启动出错', `${e}`)
+        void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
       }
     }
   }
@@ -689,6 +708,7 @@ async function fallbackToElevatedCore(
   await patchAppConfig({ corePermissionMode: 'elevated' })
   mainWindow?.webContents.send('appConfigUpdated')
   floatingWindow?.webContents.send('appConfigUpdated')
+  void showNotification({ title: '服务不可用，已切换到非服务模式' })
   return startCore(detached)
 }
 
@@ -748,7 +768,7 @@ async function fallbackUnavailableServiceModes(reason: unknown): Promise<void> {
       await Promise.all(promises)
       mainWindow?.webContents.send('core-started')
     }
-    new Notification({ title: '服务不可用，已切换到非服务模式' }).show()
+    void showNotification({ title: '服务不可用，已切换到非服务模式' })
   } finally {
     mainWindow?.webContents.reload()
     floatingWindow?.webContents.reload()
@@ -761,7 +781,7 @@ export async function restartCore(): Promise<void> {
     const promises = await startCore()
     await Promise.all(promises)
   } catch (e) {
-    dialog.showErrorBox('内核启动出错', `${e}`)
+    void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
   }
 }
 
@@ -777,7 +797,7 @@ export async function keepCoreAlive(): Promise<void> {
       await writeFile(path.join(dataDir(), 'core.pid'), child.pid.toString())
     }
   } catch (e) {
-    dialog.showErrorBox('内核启动出错', `${e}`)
+    void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
   }
 }
 

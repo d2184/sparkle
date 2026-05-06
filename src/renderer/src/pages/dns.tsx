@@ -8,6 +8,7 @@ import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-c
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { restartCore } from '@renderer/utils/ipc'
 import React, { Key, useState } from 'react'
+import { notify } from '@renderer/utils/notification'
 import {
   isValidIPv4Cidr,
   isValidIPv6Cidr,
@@ -101,7 +102,7 @@ const DNS: React.FC = () => {
       await patchControledMihomoConfig(patch)
       await restartCore()
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 

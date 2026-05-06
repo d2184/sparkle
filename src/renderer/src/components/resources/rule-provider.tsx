@@ -14,6 +14,7 @@ import { IoMdRefresh } from 'react-icons/io'
 import { CgLoadbarDoc } from 'react-icons/cg'
 import { MdEditDocument } from 'react-icons/md'
 import dayjs from 'dayjs'
+import { notify } from '@renderer/utils/notification'
 
 const RuleProvider: React.FC = () => {
   const [showDetails, setShowDetails] = useState({
@@ -77,7 +78,7 @@ const RuleProvider: React.FC = () => {
       await mihomoUpdateRuleProviders(name)
       mutate()
     } catch (e) {
-      new Notification(`${name} 更新失败\n${e}`)
+      notify(`${name} 更新失败\n${e}`, { variant: 'danger' })
     } finally {
       setUpdating((prev) => {
         prev[index] = false

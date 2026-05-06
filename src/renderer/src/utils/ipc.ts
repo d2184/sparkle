@@ -131,7 +131,7 @@ export async function clearCachedMihomoLogs(): Promise<void> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('clearCachedMihomoLogs'))
 }
 
-export async function patchAppConfig(patch: Partial<AppConfig>): Promise<void> {
+export async function patchAppConfig(patch: Partial<AppConfig>): Promise<AppConfig> {
   return ipcErrorWrapper(await window.electron.ipcRenderer.invoke('patchAppConfig', patch))
 }
 

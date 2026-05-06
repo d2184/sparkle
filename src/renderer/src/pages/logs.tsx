@@ -18,6 +18,7 @@ import {
 } from '@renderer/utils/mihomo-log-store'
 import { ListBox, Select } from '@heroui-v3/react'
 import { restartMihomoLogs } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 const logLevelOrder: Record<LogLevel, number> = {
   silent: 0,
@@ -160,7 +161,7 @@ const Logs: React.FC = () => {
                   await patchAppConfig({ realtimeLogLevel: value as LogLevel })
                   await restartMihomoLogs()
                 } catch (error) {
-                  alert(error)
+                  notify(error, { variant: 'danger' })
                 }
               }}
             >

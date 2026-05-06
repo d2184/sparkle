@@ -2,6 +2,7 @@ import { Button, Modal } from '@heroui-v3/react'
 import { relaunchApp, webdavDelete, webdavRestore } from '@renderer/utils/ipc'
 import React, { useState } from 'react'
 import { MdDeleteForever } from 'react-icons/md'
+import { notify } from '@renderer/utils/notification'
 interface Props {
   filenames: string[]
   onClose: () => void
@@ -42,7 +43,7 @@ const WebdavRestoreModal: React.FC<Props> = (props) => {
                           await webdavRestore(filename)
                           await relaunchApp()
                         } catch (e) {
-                          alert(`恢复失败：${e}`)
+                          notify(`恢复失败：${e}`, { variant: 'danger' })
                         } finally {
                           setRestoring(false)
                         }
@@ -59,7 +60,7 @@ const WebdavRestoreModal: React.FC<Props> = (props) => {
                           await webdavDelete(filename)
                           setFilenames(filenames.filter((name) => name !== filename))
                         } catch (e) {
-                          alert(`删除失败：${e}`)
+                          notify(`删除失败：${e}`, { variant: 'danger' })
                         }
                       }}
                     >

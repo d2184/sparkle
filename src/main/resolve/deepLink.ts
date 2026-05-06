@@ -1,6 +1,7 @@
-import { dialog, ipcMain, Notification, type BrowserWindow, type IpcMainEvent } from 'electron'
+import { ipcMain, type BrowserWindow, type IpcMainEvent } from 'electron'
 import { addOverrideItem, addProfileItem } from '../config'
 import { getUserAgent } from '../utils/userAgent'
+import { showNotification } from '../utils/notification'
 
 interface DeepLinkContext {
   getMainWindow: () => BrowserWindow | null
@@ -31,10 +32,14 @@ export async function handleDeepLink(url: string, context: DeepLinkContext): Pro
             url: profileUrl
           })
           context.getMainWindow()?.webContents.send('profileConfigUpdated')
-          new Notification({ title: '订阅导入成功' }).show()
+          void showNotification({ title: '订阅导入成功', variant: 'success' })
         }
       } catch (error) {
-        dialog.showErrorBox('订阅导入失败', `${url}\n${error}`)
+        void showNotification({
+          title: '订阅导入失败',
+          body: `${url}\n${error}`,
+          variant: 'danger'
+        })
       }
       break
     }
@@ -58,10 +63,14 @@ export async function handleDeepLink(url: string, context: DeepLinkContext): Pro
             ext: overrideUrl.pathname.endsWith('.js') ? 'js' : 'yaml'
           })
           context.getMainWindow()?.webContents.send('overrideConfigUpdated')
-          new Notification({ title: '覆写导入成功' }).show()
+          void showNotification({ title: '覆写导入成功', variant: 'success' })
         }
       } catch (error) {
-        dialog.showErrorBox('覆写导入失败', `${url}\n${error}`)
+        void showNotification({
+          title: '覆写导入失败',
+          body: `${url}\n${error}`,
+          variant: 'danger'
+        })
       }
       break
     }

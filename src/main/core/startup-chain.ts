@@ -106,7 +106,7 @@ export function isControllerReadyLog(logLine: string): boolean {
 
 export function isTunPermissionError(logLine: string): boolean {
   return logLine.includes(
-    'Start TUN listening error: configure tun interface: Connect: operation not permitted'
+    'Start TUN listening error: configure tun interface: operation not permitted'
   )
 }
 

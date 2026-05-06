@@ -3,6 +3,7 @@ import os from 'os'
 export const defaultConfig: AppConfig = {
   core: 'mihomo',
   updateChannel: 'stable',
+  notificationMode: 'system',
   silentStart: false,
   appTheme: 'system',
   useWindowFrame: false,
@@ -52,12 +53,13 @@ export const defaultConfig: AppConfig = {
   disableGPU: process.platform === 'win32' && parseInt(os.release().split('.')[2], 10) <= 20000,
   proxyDisplayLayout: 'double',
   groupDisplayLayout: 'double',
-  showGroupSelectedProxy: true,
+  showGroupSelectedProxy: false,
   autoLightweightMode: 'core',
   coreStartupMode: 'post-up',
   delayTestConcurrency: 50,
   delayTestUseGroupApi: false,
-  delayTestUrlScope: 'group'
+  delayTestUrlScope: 'group',
+  showProxyDetailTooltip: false
 }
 
 export const defaultControledMihomoConfig: Partial<MihomoConfig> = {

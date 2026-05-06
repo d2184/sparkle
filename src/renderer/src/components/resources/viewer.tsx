@@ -4,6 +4,7 @@ import { BaseEditor } from '../base/base-editor-lazy'
 import { getFileStr, saveFileStrWithElevation, setFileStr } from '@renderer/utils/ipc'
 import yaml from 'js-yaml'
 import ConfirmModal from '../base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 type Language = 'yaml' | 'javascript' | 'css' | 'json' | 'text'
 const FILE_PERMISSION_ELEVATION_REQUIRED = 'FILE_PERMISSION_ELEVATION_REQUIRED'
 
@@ -59,7 +60,7 @@ const Viewer: React.FC<Props> = (props) => {
         setShowPermissionConfirm(true)
         return
       }
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       setIsSaving(false)
     }

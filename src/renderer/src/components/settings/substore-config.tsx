@@ -11,6 +11,7 @@ import {
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import debounce from '@renderer/utils/debounce'
 import { isValidCron } from 'cron-validator'
+import { notify } from '@renderer/utils/notification'
 
 const SubStoreConfig: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
@@ -72,7 +73,7 @@ const SubStoreConfig: React.FC = () => {
                 await stopSubStoreBackendServer()
               }
             } catch (e) {
-              alert(e)
+              notify(e, { variant: 'danger' })
             }
           }}
         />
@@ -93,7 +94,7 @@ const SubStoreConfig: React.FC = () => {
                   await startSubStoreFrontendServer()
                   await startSubStoreBackendServer()
                 } catch (e) {
-                  alert(e)
+                  notify(e, { variant: 'danger' })
                 }
               }}
             />
@@ -111,7 +112,7 @@ const SubStoreConfig: React.FC = () => {
                     await startSubStoreBackendServer()
                   }
                 } catch (e) {
-                  alert(e)
+                  notify(e, { variant: 'danger' })
                 }
               }}
             />
@@ -140,7 +141,7 @@ const SubStoreConfig: React.FC = () => {
                       await patchAppConfig({ useProxyInSubStore: v })
                       await startSubStoreBackendServer()
                     } catch (e) {
-                      alert(e)
+                      notify(e, { variant: 'danger' })
                     }
                   }}
                 />
@@ -159,9 +160,9 @@ const SubStoreConfig: React.FC = () => {
                           await patchAppConfig({
                             subStoreBackendSyncCron: subStoreBackendSyncCronValue
                           })
-                          new Notification('重启应用生效')
+                          notify('重启应用生效')
                         } else {
-                          alert('Cron 表达式无效')
+                          notify('Cron 表达式无效', { variant: 'danger' })
                         }
                       }}
                     >
@@ -192,9 +193,9 @@ const SubStoreConfig: React.FC = () => {
                           await patchAppConfig({
                             subStoreBackendDownloadCron: subStoreBackendDownloadCronValue
                           })
-                          new Notification('重启应用生效')
+                          notify('重启应用生效')
                         } else {
-                          alert('Cron 表达式无效')
+                          notify('Cron 表达式无效', { variant: 'danger' })
                         }
                       }}
                     >
@@ -225,9 +226,9 @@ const SubStoreConfig: React.FC = () => {
                           await patchAppConfig({
                             subStoreBackendUploadCron: subStoreBackendUploadCronValue
                           })
-                          new Notification('重启应用生效')
+                          notify('重启应用生效')
                         } else {
-                          alert('Cron 表达式无效')
+                          notify('Cron 表达式无效', { variant: 'danger' })
                         }
                       }}
                     >

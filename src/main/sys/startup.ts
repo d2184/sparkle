@@ -1,11 +1,12 @@
 import { is } from '@electron-toolkit/utils'
-import { app, dialog } from 'electron'
+import { app } from 'electron'
 import { execSync, spawn } from 'child_process'
 import { existsSync, writeFileSync } from 'fs'
 import iconv from 'iconv-lite'
 import path from 'path'
 import { exePath, taskDir } from '../utils/dirs'
 import { createElevateTaskSync } from './misc'
+import { showNotification } from '../utils/notification'
 
 export function ensureWindowsElevatedStartup(
   corePermissionMode: string | undefined,
@@ -41,10 +42,11 @@ export function ensureWindowsElevatedStartup(
       } catch {
         // ignore
       }
-      dialog.showErrorBox(
-        '首次启动请以管理员权限运行',
-        `首次启动请以管理员权限运行\n${createErrorStr}\n${errorStr}`
-      )
+      void showNotification({
+        title: '首次启动请以管理员权限运行',
+        body: `首次启动请以管理员权限运行\n${createErrorStr}\n${errorStr}`,
+        variant: 'danger'
+      })
     } finally {
       exitApp()
     }

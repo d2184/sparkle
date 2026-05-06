@@ -10,6 +10,7 @@ import PubSub from 'pubsub-js'
 import useSWR from 'swr'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { LuCpu } from 'react-icons/lu'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   iconOnly?: boolean
@@ -121,7 +122,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
                     await new Promise((resolve) => setTimeout(resolve, 2000))
                     setRestarting(false)
                   } catch (e) {
-                    alert(e)
+                    notify(e, { variant: 'danger' })
                   } finally {
                     mutate()
                   }

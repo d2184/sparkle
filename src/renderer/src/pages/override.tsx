@@ -20,6 +20,7 @@ import { FaPlus } from 'react-icons/fa6'
 import { HiOutlineDocumentText } from 'react-icons/hi'
 import { RiArchiveLine } from 'react-icons/ri'
 import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
+import { notify } from '@renderer/utils/notification'
 
 const emptyItems: OverrideItem[] = []
 
@@ -113,10 +114,10 @@ const Override: React.FC = () => {
               ext: file.name.endsWith('.js') ? 'js' : 'yaml'
             })
           } catch (e) {
-            alert('文件导入失败' + e)
+            notify('文件导入失败' + e, { variant: 'danger' })
           }
         } else {
-          alert('不支持的文件类型')
+          notify('不支持的文件类型', { variant: 'danger' })
         }
       }
       isProcessingDrop.current = false
@@ -218,7 +219,7 @@ const Override: React.FC = () => {
                       })
                     }
                   } catch (e) {
-                    alert(e)
+                    notify(e, { variant: 'danger' })
                   }
                 } else if (key === 'new-yaml') {
                   await addOverrideItem({

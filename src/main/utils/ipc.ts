@@ -1,4 +1,4 @@
-import { app, dialog, ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import {
   mihomoChangeProxy,
   mihomoCloseConnections,
@@ -138,6 +138,7 @@ import { getIconDataURL, getImageDataURL } from './icon'
 import { startMonitor } from '../resolve/trafficMonitor'
 import { closeFloatingWindow, showContextMenu, showFloatingWindow } from '../resolve/floatingWindow'
 import { getAppName } from './appName'
+import { showNotification } from './notification'
 import { getUserAgent } from './userAgent'
 import { appendAppLog, clearCachedMihomoLogs, getCachedMihomoLogs } from './log'
 
@@ -164,11 +165,11 @@ function ipcErrorWrapper<T>( // eslint-disable-next-line @typescript-eslint/no-e
   }
 }
 
-async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise<void> {
-  await patchAppConfig(patch)
+async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise<AppConfig> {
+  const nextConfig = await patchAppConfig(await normalizeServiceModePatch(patch))
 
   if (!('saveLogs' in patch || 'maxLogFileSizeMB' in patch)) {
-    return
+    return nextConfig
   }
 
   const {
@@ -177,7 +178,7 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
     maxLogFileSizeMB = 20
   } = await getAppConfig()
   if (corePermissionMode !== 'service') {
-    return
+    return nextConfig
   }
 
   void patchCoreProfile({
@@ -187,6 +188,30 @@ async function patchAppConfigWithServiceSync(patch: Partial<AppConfig>): Promise
   }).catch((error) => {
     void appendAppLog(`[Service]: sync core log config failed, ${error}\n`)
   })
+
+  return nextConfig
+}
+
+async function normalizeServiceModePatch(patch: Partial<AppConfig>): Promise<Partial<AppConfig>> {
+  if (patch.sysProxy?.settingMode !== 'service') {
+    return patch
+  }
+
+  const status = await serviceStatus().catch(() => 'unknown' as const)
+  if (status === 'running') {
+    return patch
+  }
+
+  void showNotification({ title: '服务不可用，已切换到执行命令模式' })
+  return {
+    ...patch,
+    sysProxy: {
+      ...patch.sysProxy,
+      settingMode: 'exec',
+      guard: false,
+      guardNotify: false
+    }
+  }
 }
 
 export function registerIpcMainHandlers(): void {
@@ -371,7 +396,7 @@ export function registerIpcMainHandlers(): void {
   ipcMain.handle('applyTheme', (_e, theme) => ipcErrorWrapper(applyTheme)(theme))
   ipcMain.handle('copyEnv', (_e, type) => ipcErrorWrapper(copyEnv)(type))
   ipcMain.handle('alert', (_e, msg) => {
-    dialog.showErrorBox('Sparkle', msg)
+    void showNotification({ title: 'Sparkle', body: msg, variant: 'danger' })
   })
   ipcMain.handle('resetAppConfig', resetAppConfig)
   ipcMain.handle('relaunchApp', () => {

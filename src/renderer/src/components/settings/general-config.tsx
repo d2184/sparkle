@@ -7,6 +7,7 @@ import { checkAutoRun, disableAutoRun, enableAutoRun, relaunchApp } from '@rende
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { IoIosHelpCircle } from 'react-icons/io'
 import ConfirmModal from '../base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 
 const GeneralConfig: React.FC = () => {
   const { data: enable, mutate: mutateEnable } = useSWR('checkAutoRun', checkAutoRun)
@@ -15,7 +16,7 @@ const GeneralConfig: React.FC = () => {
     silentStart = false,
     autoCheckUpdate,
     updateChannel = 'stable',
-
+    notificationMode = 'system',
     disableGPU = false,
     disableAnimation = false
   } = appConfig || {}
@@ -63,7 +64,7 @@ const GeneralConfig: React.FC = () => {
                   await disableAutoRun()
                 }
               } catch (e) {
-                alert(e)
+                notify(e, { variant: 'danger' })
               } finally {
                 mutateEnable()
               }
@@ -99,6 +100,19 @@ const GeneralConfig: React.FC = () => {
           >
             <Tab key="stable" title="正式版" />
             <Tab key="beta" title="测试版" />
+          </Tabs>
+        </SettingItem>
+        <SettingItem compatKey="legacy" title="通知形式" divider>
+          <Tabs
+            size="sm"
+            color="primary"
+            selectedKey={notificationMode}
+            onSelectionChange={(v) => {
+              patchAppConfig({ notificationMode: v as AppNotificationMode })
+            }}
+          >
+            <Tab key="system" title="系统" />
+            <Tab key="toast" title="应用内" />
           </Tabs>
         </SettingItem>
 

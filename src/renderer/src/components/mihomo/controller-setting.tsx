@@ -9,6 +9,7 @@ import { IoMdCloudDownload, IoMdRefresh } from 'react-icons/io'
 import { HiExternalLink } from 'react-icons/hi'
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai'
 import { isValidListenAddress } from '@renderer/utils/validate'
+import { notify } from '@renderer/utils/notification'
 
 const ControllerSetting: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -41,9 +42,9 @@ const ControllerSetting: React.FC = () => {
     try {
       setUpgrading(true)
       await mihomoUpgradeUI()
-      new Notification('面板更新成功')
+      notify('面板更新成功', { variant: 'success' })
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       setUpgrading(false)
     }

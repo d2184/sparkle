@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { Button, Spinner, Card, CardBody, Chip, Divider } from '@heroui/react'
 import { Modal } from '@heroui-v3/react'
 import { serviceStatus, testServiceConnection } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   onChange: (open: boolean) => void
@@ -77,7 +78,7 @@ const ServiceModal: React.FC<Props> = (props) => {
       await refreshServiceStatus(result)
     } catch (e) {
       await refreshServiceStatus()
-      if (!isUserCancelledError(e)) alert(e)
+      if (!isUserCancelledError(e)) notify(e, { variant: 'danger' })
     } finally {
       setLoading(false)
     }

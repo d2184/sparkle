@@ -4,6 +4,7 @@ import yaml from 'js-yaml'
 import { Button, Modal } from '@heroui-v3/react'
 import { BaseEditor } from '../base/base-editor-lazy'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   bypass: string[]
@@ -28,10 +29,10 @@ const ByPassEditorModal: React.FC<Props> = (props) => {
       if (parsed && Array.isArray(parsed.bypass)) {
         onConfirm(parsed.bypass)
       } else {
-        alert('YAML 格式错误')
+        notify('YAML 格式错误', { variant: 'danger' })
       }
     } catch (e) {
-      alert('YAML 解析失败：' + e)
+      notify('YAML 解析失败：' + e, { variant: 'danger' })
     }
   }
 

@@ -6,6 +6,7 @@ import EditableList from '@renderer/components/base/base-list-editor'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { restartCore } from '@renderer/utils/ipc'
 import React, { useState } from 'react'
+import { notify } from '@renderer/utils/notification'
 
 const Sniffer: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -59,7 +60,7 @@ const Sniffer: React.FC = () => {
       await patchControledMihomoConfig(patch)
       await restartCore()
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 

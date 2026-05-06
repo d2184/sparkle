@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react'
 import useSWR from 'swr'
+import { notify } from '@renderer/utils/notification'
 import {
   getProfileConfig,
   setProfileConfig as set,
@@ -30,7 +31,7 @@ export const ProfileConfigProvider: React.FC<{ children: ReactNode }> = ({ child
     try {
       await set(config)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateProfileConfig()
       window.electron.ipcRenderer.send('updateTrayMenu')
@@ -41,7 +42,7 @@ export const ProfileConfigProvider: React.FC<{ children: ReactNode }> = ({ child
     try {
       await add(item)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateProfileConfig()
       window.electron.ipcRenderer.send('updateTrayMenu')
@@ -52,7 +53,7 @@ export const ProfileConfigProvider: React.FC<{ children: ReactNode }> = ({ child
     try {
       await remove(id)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateProfileConfig()
       window.electron.ipcRenderer.send('updateTrayMenu')
@@ -63,7 +64,7 @@ export const ProfileConfigProvider: React.FC<{ children: ReactNode }> = ({ child
     try {
       await update(item)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateProfileConfig()
       window.electron.ipcRenderer.send('updateTrayMenu')
@@ -74,7 +75,7 @@ export const ProfileConfigProvider: React.FC<{ children: ReactNode }> = ({ child
     try {
       await change(id)
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     } finally {
       mutateProfileConfig()
       window.electron.ipcRenderer.send('updateTrayMenu')

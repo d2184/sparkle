@@ -1,6 +1,6 @@
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcMainHandlers } from './utils/ipc'
-import { app, shell, BrowserWindow, Menu, dialog } from 'electron'
+import { app, shell, BrowserWindow, Menu } from 'electron'
 import { getAppConfig } from './config'
 import { quitWithoutCore, startCore, stopCore } from './core/manager'
 import { disableSysProxySync, triggerSysProxy } from './sys/sysproxy'
@@ -22,6 +22,7 @@ import {
 } from './sys/startup'
 import { handleDeepLink } from './resolve/deepLink'
 import { initAppQuitLifecycle } from './resolve/appLifecycle'
+import { showNotification } from './utils/notification'
 
 export { setNotQuitDialog } from './resolve/appLifecycle'
 
@@ -144,7 +145,7 @@ app.whenReady().then(async () => {
   try {
     await initPromise
   } catch (e) {
-    dialog.showErrorBox('应用初始化失败', `${e}`)
+    void showNotification({ title: '应用初始化失败', body: `${e}`, variant: 'danger' })
     app.quit()
     return
   }
@@ -174,7 +175,7 @@ app.whenReady().then(async () => {
       })
       coreStarted = true
     } catch (e) {
-      dialog.showErrorBox('内核启动出错', `${e}`)
+      void showNotification({ title: '内核启动出错', body: `${e}`, variant: 'danger' })
     }
   })()
 

@@ -19,6 +19,7 @@ import ExecLogModal from './exec-log-modal'
 import { openFile, restartCore } from '@renderer/utils/ipc'
 import ConfirmModal from '../base/base-confirm'
 import QRCodeModal from '../base/base-qrcode-modal'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   info: OverrideItem
@@ -234,7 +235,7 @@ const OverrideItem: React.FC<Props> = (props) => {
                         await addOverrideItem(info)
                         await restartCore()
                       } catch (e) {
-                        alert(e)
+                        notify(e, { variant: 'danger' })
                       } finally {
                         setUpdating(false)
                       }

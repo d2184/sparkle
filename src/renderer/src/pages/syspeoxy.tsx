@@ -6,10 +6,11 @@ import EditableList from '@renderer/components/base/base-list-editor'
 import PacEditorModal from '@renderer/components/sysproxy/pac-editor-modal'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { platform } from '@renderer/utils/init'
-import { openUWPTool, triggerSysProxy } from '@renderer/utils/ipc'
+import { getAppConfig, openUWPTool, serviceStatus, triggerSysProxy } from '@renderer/utils/ipc'
 import React, { Key, useEffect, useState } from 'react'
 import ByPassEditorModal from '@renderer/components/sysproxy/bypass-editor-modal'
 import { IoIosHelpCircle } from 'react-icons/io'
+import { notify } from '@renderer/utils/notification'
 
 const defaultPacScript = `
 function FindProxyForURL(url, host) {
@@ -64,7 +65,7 @@ const Sysproxy: React.FC = () => {
             '<local>'
           ]
 
-  const { appConfig, patchAppConfig } = useAppConfig()
+  const { appConfig, patchAppConfig, mutateAppConfig } = useAppConfig()
   const { sysProxy, onlyActiveDevice = false } =
     appConfig || ({ sysProxy: { enable: false } } as AppConfig)
   const [changed, setChanged] = useState(false)
@@ -78,12 +79,22 @@ const Sysproxy: React.FC = () => {
     guard: sysProxy.guard ?? false,
     guardNotify: sysProxy.guardNotify ?? false
   })
-  useEffect(() => {
+  const syncValuesFromSysProxy = (nextSysProxy: AppConfig['sysProxy']): void => {
     originSetValues((prev) => ({
       ...prev,
-      enable: sysProxy.enable
+      enable: nextSysProxy.enable,
+      host: nextSysProxy.host ?? '',
+      bypass: nextSysProxy.bypass ?? defaultBypass,
+      mode: nextSysProxy.mode ?? 'manual',
+      pacScript: nextSysProxy.pacScript ?? defaultPacScript,
+      settingMode: nextSysProxy.settingMode ?? 'exec',
+      guard: nextSysProxy.guard ?? false,
+      guardNotify: nextSysProxy.guardNotify ?? false
     }))
-  }, [sysProxy.enable])
+  }
+  useEffect(() => {
+    syncValuesFromSysProxy(sysProxy)
+  }, [sysProxy])
   const [openEditor, setOpenEditor] = useState(false)
   const [openPacEditor, setOpenPacEditor] = useState(false)
 
@@ -91,15 +102,41 @@ const Sysproxy: React.FC = () => {
     originSetValues(v)
     setChanged(true)
   }
+
+  const normalizeServiceModeValues = async (): Promise<typeof values> => {
+    if (values.settingMode !== 'service') {
+      return values
+    }
+
+    const status = await serviceStatus().catch(() => 'unknown' as const)
+    if (status === 'running') {
+      return values
+    }
+
+    notify('服务不可用，已切换到执行命令模式')
+    const nextValues = {
+      ...values,
+      settingMode: 'exec' as const,
+      guard: false,
+      guardNotify: false
+    }
+    originSetValues(nextValues)
+    return nextValues
+  }
+
   const onSave = async (): Promise<void> => {
     // check valid TODO
-    await patchAppConfig({ sysProxy: values })
+    const nextValues = await normalizeServiceModeValues()
+    const nextConfig =
+      (await patchAppConfig({ sysProxy: nextValues })) ?? (await getAppConfig(true))
+    syncValuesFromSysProxy(nextConfig.sysProxy)
+    mutateAppConfig()
     setChanged(false)
-    if (values.enable) {
+    if (nextConfig.sysProxy.enable) {
       try {
-        await triggerSysProxy(values.enable, onlyActiveDevice)
+        await triggerSysProxy(nextConfig.sysProxy.enable, onlyActiveDevice)
       } catch (e) {
-        alert(e)
+        notify(e, { variant: 'danger' })
         await patchAppConfig({ sysProxy: { enable: false } })
       }
     }

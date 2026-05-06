@@ -428,7 +428,7 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="p-2 flex flex-col items-center space-y-2">
-            {latest && latest.version && <UpdaterButton iconOnly={true} latest={latest} />}
+            {latest && latest.version && <UpdaterButton latest={latest} />}
             <OutboundModeSwitcher iconOnly />
             <Button
               size="sm"

@@ -1,11 +1,11 @@
-import { Button } from '@heroui/react'
 import React, { useState, useEffect } from 'react'
-import UpdaterModal from './updater-modal'
-import { GrUpgrade } from 'react-icons/gr'
+import UpdaterDrawer from './updater-drawer'
 import { cancelUpdate } from '@renderer/utils/ipc'
+import { notify } from '@renderer/utils/notification'
+
+let notifiedUpdateVersion = ''
 
 interface Props {
-  iconOnly?: boolean
   latest?: {
     version: string
     changelog: string
@@ -13,8 +13,8 @@ interface Props {
 }
 
 const UpdaterButton: React.FC<Props> = (props) => {
-  const { iconOnly, latest } = props
-  const [openModal, setOpenModal] = useState(false)
+  const { latest } = props
+  const [openDrawer, setOpenDrawer] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<{
     downloading: boolean
     progress: number
@@ -39,6 +39,22 @@ const UpdaterButton: React.FC<Props> = (props) => {
     }
   }, [])
 
+  useEffect(() => {
+    if (!latest || latest.version === notifiedUpdateVersion) return
+    notifiedUpdateVersion = latest.version
+    notify('发现新版本', {
+      actionProps: {
+        children: '查看内容',
+        onPress: () => setOpenDrawer(true),
+        variant: 'secondary'
+      },
+      body: `${latest.version} 版本就绪`,
+      forceToast: true,
+      timeout: 8000,
+      variant: 'accent'
+    })
+  }, [latest])
+
   const handleCancelUpdate = async (): Promise<void> => {
     try {
       await cancelUpdate()
@@ -52,41 +68,16 @@ const UpdaterButton: React.FC<Props> = (props) => {
 
   return (
     <>
-      {openModal && (
-        <UpdaterModal
+      {openDrawer && (
+        <UpdaterDrawer
           version={latest.version}
           changelog={latest.changelog}
           updateStatus={updateStatus}
           onCancel={handleCancelUpdate}
           onClose={() => {
-            setOpenModal(false)
+            setOpenDrawer(false)
           }}
         />
-      )}
-      {iconOnly ? (
-        <Button
-          isIconOnly
-          className={`app-nodrag`}
-          color="danger"
-          size="md"
-          onPress={() => {
-            setOpenModal(true)
-          }}
-        >
-          <GrUpgrade />
-        </Button>
-      ) : (
-        <Button
-          isIconOnly
-          className={`fixed right-11.25 app-nodrag`}
-          color="danger"
-          size="sm"
-          onPress={() => {
-            setOpenModal(true)
-          }}
-        >
-          <GrUpgrade />
-        </Button>
       )}
     </>
   )

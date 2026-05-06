@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import { calcTraffic } from '@renderer/utils/calc'
 import { getHash } from '@renderer/utils/hash'
 import { Meter } from '@heroui-v3/react'
+import { notify } from '@renderer/utils/notification'
 
 const ProxyProvider: React.FC = () => {
   const [showDetails, setShowDetails] = useState({
@@ -82,7 +83,7 @@ const ProxyProvider: React.FC = () => {
       await mihomoUpdateProxyProviders(name)
       mutate()
     } catch (e) {
-      new Notification(`${name} 更新失败\n${e}`)
+      notify(`${name} 更新失败\n${e}`, { variant: 'danger' })
     } finally {
       setUpdating((prev) => {
         prev[index] = false

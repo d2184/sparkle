@@ -8,6 +8,7 @@ import { restartCore, setupFirewall } from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
 import React, { Key, useState } from 'react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
+import { notify } from '@renderer/utils/notification'
 
 const Tun: React.FC = () => {
   const { controledMihomoConfig, patchControledMihomoConfig } = useControledMihomoConfig()
@@ -95,10 +96,10 @@ const Tun: React.FC = () => {
                   setLoading(true)
                   try {
                     await setupFirewall()
-                    new Notification('防火墙重设成功')
+                    notify('防火墙重设成功')
                     await restartCore()
                   } catch (e) {
-                    alert(e)
+                    notify(e, { variant: 'danger' })
                   } finally {
                     setLoading(false)
                   }

@@ -10,7 +10,7 @@ let keyManager: KeyManager | null = null
 let serviceUnavailableFallbackHandler: ((reason: unknown) => Promise<void>) | null = null
 let serviceUnavailableFallbackTimer: NodeJS.Timeout | null = null
 let serviceUnavailableFallbackPromise: Promise<void> | null = null
-const serviceUnavailableFallbackDelay = 12000
+const serviceUnavailableFallbackDelay = 2000
 const serviceUnavailableStatuses = [401, 403, 409, 503]
 
 export class ServiceAPIError extends Error {

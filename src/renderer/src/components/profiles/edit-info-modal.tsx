@@ -16,6 +16,7 @@ import { restartCore } from '@renderer/utils/ipc'
 import { MdDeleteForever } from 'react-icons/md'
 import { FaPlus } from 'react-icons/fa6'
 import { IoIosHelpCircle } from 'react-icons/io'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   item: ProfileItem
@@ -46,7 +47,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
       }
       onClose()
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 

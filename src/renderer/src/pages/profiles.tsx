@@ -28,6 +28,7 @@ import ProfileSettingModal from '@renderer/components/profiles/profile-setting-m
 import useSWR from 'swr'
 import { useNavigate } from 'react-router-dom'
 import { useCardDndSensors } from '@renderer/hooks/use-card-dnd-sensors'
+import { notify } from '@renderer/utils/notification'
 
 const emptyItems: ProfileItem[] = []
 
@@ -187,10 +188,10 @@ const Profiles: React.FC = () => {
             const content = await readTextFile(path)
             await addProfileItem({ name: file.name, type: 'local', file: content })
           } catch (e) {
-            alert('文件导入失败' + e)
+            notify('文件导入失败' + e, { variant: 'danger' })
           }
         } else {
-          alert('不支持的文件类型')
+          notify('不支持的文件类型', { variant: 'danger' })
         }
       }
       setFileOver(false)
@@ -344,7 +345,7 @@ const Profiles: React.FC = () => {
                         useProxy
                       })
                     } catch (e) {
-                      alert(e)
+                      notify(e, { variant: 'danger' })
                     } finally {
                       setSubStoreImporting(false)
                     }
@@ -365,7 +366,7 @@ const Profiles: React.FC = () => {
                         useProxy
                       })
                     } catch (e) {
-                      alert(e)
+                      notify(e, { variant: 'danger' })
                     } finally {
                       setSubStoreImporting(false)
                     }
@@ -398,7 +399,7 @@ const Profiles: React.FC = () => {
                         await addProfileItem({ name: fileName, type: 'local', file: content })
                       }
                     } catch (e) {
-                      alert(e)
+                      notify(e, { variant: 'danger' })
                     }
                     break
                   }

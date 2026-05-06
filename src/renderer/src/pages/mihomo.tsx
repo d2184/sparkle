@@ -28,6 +28,7 @@ import ControllerSetting from '@renderer/components/mihomo/controller-setting'
 import EnvSetting from '@renderer/components/mihomo/env-setting'
 import AdvancedSetting from '@renderer/components/mihomo/advanced-settings'
 import LogSetting from '@renderer/components/mihomo/log-setting'
+import { notify } from '@renderer/utils/notification'
 
 let systemCorePathsCache: string[] | null = null
 let cachePromise: Promise<string[]> | null = null
@@ -89,7 +90,7 @@ const Mihomo: React.FC = () => {
       await restartCore()
       PubSub.publish('mihomo-core-changed')
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 
@@ -100,9 +101,9 @@ const Mihomo: React.FC = () => {
       setTimeout(() => PubSub.publish('mihomo-core-changed'), 2000)
     } catch (e) {
       if (typeof e === 'string' && e.includes('already using latest version')) {
-        new Notification('已经是最新版本')
+        notify('已经是最新版本')
       } else {
-        alert(e)
+        notify(e, { variant: 'danger' })
       }
     } finally {
       setUpgrading(false)
@@ -114,7 +115,7 @@ const Mihomo: React.FC = () => {
       const paths = await getSystemCorePaths()
 
       if (paths.length === 0) {
-        new Notification('未找到系统内核', {
+        notify('未找到系统内核', {
           body: '系统中未找到可用的 mihomo 或 clash 内核，已自动切换回内置内核'
         })
         return
@@ -134,7 +135,7 @@ const Mihomo: React.FC = () => {
       await patchAppConfig({ corePermissionMode: key as 'elevated' | 'service' })
       await restartCore()
     } catch (e) {
-      alert(e)
+      notify(e, { variant: 'danger' })
     }
   }
 
@@ -146,16 +147,16 @@ const Mihomo: React.FC = () => {
           onRevoke={async () => {
             if (platform === 'win32') {
               await deleteElevateTask()
-              new Notification('提权配置已取消')
+              notify('提权配置已取消')
             } else {
               await revokeCorePermission()
-              new Notification('内核权限已撤销')
+              notify('内核权限已撤销')
             }
             await restartCore()
           }}
           onGrant={async () => {
             await manualGrantCorePermition()
-            new Notification(platform === 'win32' ? '提权配置成功' : '内核授权成功')
+            notify(platform === 'win32' ? '提权配置成功' : '内核授权成功')
             await restartCore()
           }}
         />
@@ -165,23 +166,23 @@ const Mihomo: React.FC = () => {
           onChange={setShowServiceModal}
           onInit={async () => {
             await initService()
-            new Notification('服务初始化成功')
+            notify('服务初始化成功')
           }}
           onInstall={async () => {
             await installService()
-            new Notification('服务安装成功')
+            notify('服务安装成功')
           }}
           onUninstall={async () => {
             await uninstallService()
-            new Notification('服务卸载成功')
+            notify('服务卸载成功')
           }}
           onStart={async () => {
             await startService()
-            new Notification('服务启动成功')
+            notify('服务启动成功')
           }}
           onRestart={async () => {
             await restartService()
-            new Notification('服务重启成功')
+            notify('服务重启成功')
           }}
         />
       )}
@@ -265,7 +266,7 @@ const Mihomo: React.FC = () => {
                 })
                 await restartCore()
               } catch (e) {
-                alert(e)
+                notify(e, { variant: 'danger' })
               }
             }}
           >

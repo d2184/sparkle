@@ -3,6 +3,15 @@ interface AppVersion {
   changelog: string
 }
 
+type AppNotificationMode = 'system' | 'toast'
+type AppNotificationVariant = 'default' | 'accent' | 'success' | 'warning' | 'danger'
+
+interface AppNotificationPayload {
+  title: string
+  body?: string
+  variant?: AppNotificationVariant
+}
+
 interface ISysProxyConfig {
   enable: boolean
   host?: string
@@ -21,6 +30,7 @@ interface IHost {
 
 interface AppConfig {
   updateChannel: 'stable' | 'beta'
+  notificationMode?: AppNotificationMode
   core: 'mihomo' | 'mihomo-alpha' | 'system'
   systemCorePath?: string
   corePermissionMode?: 'elevated' | 'service'

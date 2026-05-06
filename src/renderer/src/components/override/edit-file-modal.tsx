@@ -4,6 +4,7 @@ import { BaseEditor } from '../base/base-editor-lazy'
 import { getOverride, restartCore, setOverride } from '@renderer/utils/ipc'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import ConfirmModal from '../base/base-confirm'
+import { notify } from '@renderer/utils/notification'
 
 interface Props {
   id: string
@@ -104,7 +105,7 @@ const EditFileModal: React.FC<Props> = (props) => {
                       await restartCore()
                       onClose()
                     } catch (e) {
-                      alert(e)
+                      notify(e, { variant: 'danger' })
                     }
                   }}
                 >
