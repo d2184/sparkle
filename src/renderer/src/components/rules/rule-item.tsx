@@ -1,6 +1,7 @@
 import { Card, CardBody, Switch, Chip } from '@heroui/react'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { mihomoRulesDisable } from '@renderer/utils/ipc'
+import RuleDetailTooltip from './rule-detail-tooltip'
 
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
@@ -14,14 +15,13 @@ interface Props {
   rule: ControllerRulesDetail
 }
 
-const isZeroTime = (at: string): boolean => {
-  return at.startsWith('0001-01-01') || at.startsWith('1970-01-01')
-}
-
 const RuleItem: React.FC<Props> = ({ rule, index }) => {
   const [isEnabled, setIsEnabled] = useState(!rule.extra.disabled)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [showTooltip, setShowTooltip] = useState(false)
 
-  const { hitCount, hitAt, missCount, missAt } = rule.extra
+  const { hitCount, missCount } = rule.extra
 
   const totalCount = hitCount + missCount
   const hitRate = totalCount > 0 ? (hitCount / totalCount) * 100 : 0
@@ -31,6 +31,36 @@ const RuleItem: React.FC<Props> = ({ rule, index }) => {
   useEffect(() => {
     setIsEnabled(!rule.extra.disabled)
   }, [rule, rule.extra.disabled])
+
+  const handleMouseEnter = useCallback(() => {
+    hoverTimerRef.current = setTimeout(() => setShowTooltip(true), 600)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current !== null) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+    setShowTooltip(false)
+  }, [])
+
+  useEffect(() => {
+    if (!showTooltip) return
+    const handleMouseMove = (e: MouseEvent): void => {
+      if (!wrapperRef.current) return
+      const rect = wrapperRef.current.getBoundingClientRect()
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        setShowTooltip(false)
+      }
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    return () => document.removeEventListener('mousemove', handleMouseMove)
+  }, [showTooltip])
 
   const handleToggle = async (v: boolean): Promise<void> => {
     setIsEnabled(v)
@@ -54,19 +84,8 @@ const RuleItem: React.FC<Props> = ({ rule, index }) => {
               <div>{rule.type}</div>
               <div className="ml-2">{rule.proxy}</div>
             </div>
-            {/* 统计信息 */}
             {hasStats && (
-              <div className="right-2 flex items-center gap-2 text-xs shrink-0  whitespace-nowrap">
-                <span className="text-foreground-500">
-                  {!isZeroTime(hitAt)
-                    ? dayjs(hitAt).fromNow()
-                    : !isZeroTime(missAt)
-                      ? dayjs(missAt).fromNow()
-                      : '未使用规则'}
-                </span>
-                <span className="text-foreground-600 font-medium">
-                  {hitCount}/{totalCount}
-                </span>
+              <div ref={wrapperRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <Chip size="sm" variant="flat" color="primary" className="text-xs">
                   {hitRate.toFixed(1)}%
                 </Chip>
@@ -75,6 +94,11 @@ const RuleItem: React.FC<Props> = ({ rule, index }) => {
           </div>
         </CardBody>
       </Card>
+      <RuleDetailTooltip
+        rule={rule}
+        anchorEl={showTooltip ? wrapperRef.current : null}
+        visible={showTooltip}
+      />
     </div>
   )
 }
