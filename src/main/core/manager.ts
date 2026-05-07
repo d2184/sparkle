@@ -90,6 +90,12 @@ let serviceUnavailableModeFallbackPromise: Promise<void> | null = null
 const serviceConnectionRetryTimeout = 10000
 const serviceConnectionRetryInterval = 500
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 setServiceUnavailableFallbackHandler((reason) => {
   if (!serviceUnavailableModeFallbackPromise) {
     serviceUnavailableModeFallbackPromise = fallbackUnavailableServiceModes(reason).finally(() => {
@@ -116,7 +122,7 @@ async function startMihomoApiStreams(): Promise<void> {
 
 async function completeCoreInitialization(logLevel?: LogLevel): Promise<void> {
   const tasks: Promise<unknown>[] = [
-    new Promise<void>((resolve) => setTimeout(resolve, 100)).then(() => {
+    delay(100).then(() => {
       mainWindow?.webContents.send('groupsUpdated')
       mainWindow?.webContents.send('rulesUpdated')
     }),
@@ -124,11 +130,7 @@ async function completeCoreInitialization(logLevel?: LogLevel): Promise<void> {
   ]
 
   if (logLevel) {
-    tasks.push(
-      new Promise<void>((resolve) => setTimeout(resolve, 100)).then(() =>
-        patchMihomoConfig({ 'log-level': logLevel })
-      )
-    )
+    tasks.push(delay(100).then(() => patchMihomoConfig({ 'log-level': logLevel })))
   }
 
   await Promise.all(tasks)
@@ -144,7 +146,7 @@ async function waitForMihomoReady(): Promise<void> {
       await mihomoGroups()
       break
     } catch (error) {
-      await new Promise((resolve) => setTimeout(resolve, retryInterval))
+      await delay(retryInterval)
     }
   }
 }
@@ -170,7 +172,7 @@ async function waitForServiceCoreConnection(
   let lastError = initialError
 
   while (Date.now() - startedAt < serviceConnectionRetryTimeout) {
-    await new Promise((resolve) => setTimeout(resolve, serviceConnectionRetryInterval))
+    await delay(serviceConnectionRetryInterval)
 
     try {
       await getCoreStatus()
@@ -498,7 +500,7 @@ export async function stopCore(force = false): Promise<void> {
       try {
         process.kill(pid, 0)
         process.kill(pid, 'SIGINT')
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await delay(1000)
         try {
           process.kill(pid, 0)
           process.kill(pid, 'SIGKILL')
@@ -609,7 +611,7 @@ async function handleServiceCoreEventStreamState(
 }
 
 async function resumeServiceCoreAfterReconnect(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  await delay(500)
   if (serviceCoreStartupActive) {
     return
   }

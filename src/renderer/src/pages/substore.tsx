@@ -50,7 +50,9 @@ const SubStore: React.FC = () => {
                   await downloadSubStore()
                   await stopSubStoreBackendServer()
                   await startSubStoreBackendServer()
-                  await new Promise((resolve) => setTimeout(resolve, 1000))
+                  await new Promise((resolve) => {
+                    setTimeout(resolve, 1000)
+                  })
                   setFrontendPort(0)
                   await stopSubStoreFrontendServer()
                   await startSubStoreFrontendServer()

@@ -22,7 +22,9 @@ function isUserCancelledError(error: unknown): boolean {
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
 }
 
 async function readServiceStatus(): Promise<ServiceStatusType> {

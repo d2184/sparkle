@@ -43,6 +43,7 @@ import { app } from 'electron'
 import { startSSIDCheck } from '../sys/ssid'
 import { startNetworkDetection } from '../core/manager'
 import { initKeyManager } from '../service/manager'
+import { appendAppLog } from './log'
 
 async function initDirs(): Promise<void> {
   if (!existsSync(dataDir())) {
@@ -217,7 +218,35 @@ function initDeeplink(): void {
   }
 }
 
-export async function init(): Promise<void> {
+function runBackgroundInitTask(name: string, task: Promise<void>): void {
+  task.catch((error) => {
+    appendAppLog(`[App]: background init task ${name} failed, ${error}\n`).catch(() => {})
+  })
+}
+
+function startBackgroundInit(appConfig: AppConfig): void {
+  const { sysProxy, onlyActiveDevice = false, networkDetection = false } = appConfig
+
+  runBackgroundInitTask('substore frontend', startSubStoreFrontendServer())
+  runBackgroundInitTask('substore backend', startSubStoreBackendServer())
+  runBackgroundInitTask('ssid check', startSSIDCheck())
+
+  if (networkDetection) {
+    runBackgroundInitTask('network detection', startNetworkDetection())
+  }
+
+  runBackgroundInitTask(
+    'sysproxy restore',
+    (async (): Promise<void> => {
+      if (sysProxy.enable) {
+        await startPacServer()
+      }
+      await triggerSysProxy(sysProxy.enable, onlyActiveDevice)
+    })()
+  )
+}
+
+export async function init(): Promise<AppConfig> {
   await initDirs()
   await Promise.all([initConfig(), initFiles()])
   await migration()
@@ -230,32 +259,7 @@ export async function init(): Promise<void> {
     })
   ])
 
-  const { sysProxy, onlyActiveDevice = false, networkDetection = false } = appConfig
-
-  const initTasks: Promise<void>[] = [
-    startSubStoreFrontendServer(),
-    startSubStoreBackendServer(),
-    startSSIDCheck()
-  ]
-
-  if (networkDetection) {
-    initTasks.push(startNetworkDetection())
-  }
-
-  initTasks.push(
-    (async (): Promise<void> => {
-      try {
-        if (sysProxy.enable) {
-          await startPacServer()
-        }
-        await triggerSysProxy(sysProxy.enable, onlyActiveDevice)
-      } catch {
-        // ignore
-      }
-    })()
-  )
-
-  await Promise.all(initTasks)
-
   initDeeplink()
+  startBackgroundInit(appConfig)
+  return appConfig
 }

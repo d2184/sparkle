@@ -10,6 +10,12 @@ import { loadServiceAuthSecret, saveServiceAuthSecret, type ServiceAuthSecret } 
 let keyManager: KeyManager | null = null
 const execFilePromise = promisify(execFile)
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
 function parseLegacyServiceAuth(value: string): ServiceAuthSecret | null {
   try {
     const [publicKey, privateKey] = value.split(':')
@@ -246,7 +252,7 @@ async function waitForServiceReady(timeoutMs = 15000): Promise<void> {
       lastError = error
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await delay(500)
   }
 
   throw new Error(

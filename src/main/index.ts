@@ -23,6 +23,7 @@ import {
 import { handleDeepLink } from './resolve/deepLink'
 import { initAppQuitLifecycle } from './resolve/appLifecycle'
 import { showNotification } from './utils/notification'
+import { appendAppLog } from './utils/log'
 
 export { setNotQuitDialog } from './resolve/appLifecycle'
 
@@ -78,6 +79,12 @@ function clearLightweightTimeout(): void {
     clearTimeout(quitTimeout)
     quitTimeout = null
   }
+}
+
+function runStartupTask(name: string, task: Promise<unknown>): void {
+  task.catch((error) => {
+    appendAppLog(`[App]: startup task ${name} failed, ${error}\n`).catch(() => {})
+  })
 }
 
 ensureWindowsElevatedStartup(syncConfig.corePermissionMode, exitApp)
@@ -142,8 +149,9 @@ initAppQuitLifecycle({
 app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('sparkle.app')
+  let appConfig: AppConfig
   try {
-    await initPromise
+    appConfig = await initPromise
   } catch (e) {
     void showNotification({ title: '应用初始化失败', body: `${e}`, variant: 'danger' })
     app.quit()
@@ -156,7 +164,6 @@ app.whenReady().then(async () => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-  const appConfig = await getAppConfig()
   const { showFloatingWindow: showFloating = false, disableTray = false } = appConfig
   registerIpcMainHandlers()
 
@@ -179,13 +186,7 @@ app.whenReady().then(async () => {
     }
   })()
 
-  const monitorPromise = (async (): Promise<void> => {
-    try {
-      await startMonitor()
-    } catch {
-      // ignore
-    }
-  })()
+  runStartupTask('traffic monitor', startMonitor())
 
   await createWindowPromise
 
@@ -198,13 +199,12 @@ app.whenReady().then(async () => {
     uiTasks.push(createTray())
   }
 
-  await Promise.all(uiTasks)
-
-  await Promise.all([coreStartPromise, monitorPromise])
-
-  if (coreStarted) {
-    mainWindow?.webContents.send('core-started')
-  }
+  runStartupTask('ui extras', Promise.all(uiTasks))
+  coreStartPromise.then(() => {
+    if (coreStarted) {
+      mainWindow?.webContents.send('core-started')
+    }
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
