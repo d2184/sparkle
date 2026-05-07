@@ -23,6 +23,7 @@ const Actions: React.FC = () => {
   const [newVersion, setNewVersion] = useState('')
   const [changelog, setChangelog] = useState('')
   const [openUpdate, setOpenUpdate] = useState(false)
+  const [updateDrawerReopenSignal, setUpdateDrawerReopenSignal] = useState(0)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<{
@@ -58,6 +59,11 @@ const Actions: React.FC = () => {
     }
   }
 
+  const openUpdateDrawer = (): void => {
+    setOpenUpdate(true)
+    setUpdateDrawerReopenSignal((signal) => signal + 1)
+  }
+
   return (
     <>
       {openUpdate && (
@@ -66,6 +72,7 @@ const Actions: React.FC = () => {
           version={newVersion}
           changelog={changelog}
           updateStatus={updateStatus}
+          reopenSignal={updateDrawerReopenSignal}
           onCancel={handleCancelUpdate}
         />
       )}
@@ -104,7 +111,7 @@ const Actions: React.FC = () => {
                   notify('发现新版本', {
                     actionProps: {
                       children: '查看内容',
-                      onPress: () => setOpenUpdate(true),
+                      onPress: openUpdateDrawer,
                       variant: 'secondary'
                     },
                     body: `${version.version} 版本就绪`,

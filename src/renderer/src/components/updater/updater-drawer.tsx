@@ -15,12 +15,13 @@ interface Props {
   }
   onCancel?: () => void
   onClose: () => void
+  reopenSignal?: number
 }
 
 const DRAWER_CLOSE_ANIMATION_MS = 700
 
 const UpdaterDrawer: React.FC<Props> = (props) => {
-  const { version, changelog, updateStatus, onCancel, onClose } = props
+  const { version, changelog, updateStatus, onCancel, onClose, reopenSignal } = props
   const [downloading, setDownloading] = useState(false)
   const [isOpen, setIsOpen] = useState(true)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -32,6 +33,14 @@ const UpdaterDrawer: React.FC<Props> = (props) => {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+    setIsOpen(true)
+  }, [reopenSignal])
 
   const onUpdate = async (): Promise<void> => {
     try {
@@ -63,6 +72,7 @@ const UpdaterDrawer: React.FC<Props> = (props) => {
 
     setIsOpen(false)
     closeTimer.current = setTimeout(() => {
+      closeTimer.current = null
       onClose()
     }, DRAWER_CLOSE_ANIMATION_MS)
   }

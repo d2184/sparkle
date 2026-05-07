@@ -15,6 +15,7 @@ interface Props {
 const UpdaterButton: React.FC<Props> = (props) => {
   const { latest } = props
   const [openDrawer, setOpenDrawer] = useState(false)
+  const [drawerReopenSignal, setDrawerReopenSignal] = useState(0)
   const [updateStatus, setUpdateStatus] = useState<{
     downloading: boolean
     progress: number
@@ -45,7 +46,10 @@ const UpdaterButton: React.FC<Props> = (props) => {
     notify('发现新版本', {
       actionProps: {
         children: '查看内容',
-        onPress: () => setOpenDrawer(true),
+        onPress: () => {
+          setOpenDrawer(true)
+          setDrawerReopenSignal((signal) => signal + 1)
+        },
         variant: 'secondary'
       },
       body: `${latest.version} 版本就绪`,
@@ -73,6 +77,7 @@ const UpdaterButton: React.FC<Props> = (props) => {
           version={latest.version}
           changelog={latest.changelog}
           updateStatus={updateStatus}
+          reopenSignal={drawerReopenSignal}
           onCancel={handleCancelUpdate}
           onClose={() => {
             setOpenDrawer(false)
