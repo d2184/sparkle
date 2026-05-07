@@ -43,7 +43,7 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
   return (
     <div ref={contentRef} className="w-full h-full">
       <div
-        className={`sticky top-0 z-40 h-12.25 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
+        className={`sticky top-0 h-12.25 w-full ${disableAnimation ? 'bg-background/95 backdrop-blur-sm' : 'bg-transparent backdrop-blur'}`}
       >
         <div className="app-drag p-2 flex justify-between h-12 items-center">
           <div className="title h-full text-lg leading-8">{props.title}</div>
@@ -53,8 +53,10 @@ const BasePage = forwardRef<HTMLDivElement, Props>((props, ref) => {
           >
             {props.header}
             <Button
+              data-react-aria-top-layer="true"
+              style={{ zIndex: 60 }}
               size="sm"
-              className="app-nodrag"
+              className="app-nodrag relative"
               isIconOnly
               variant="light"
               color={onTop ? 'primary' : 'default'}
