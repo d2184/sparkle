@@ -46,6 +46,11 @@ import {
   type ServiceCoreLaunchProfile
 } from '../service/api'
 import { serviceStatus } from '../service/manager'
+import {
+  clearAppUpdateServiceFallbackPause,
+  getServiceFallbackPolicy,
+  shouldSkipServiceUnavailableFallback
+} from '../service/fallback'
 import { appendAppLog, createLogWritable, setMihomoLogSource } from '../utils/log'
 import { showNotification } from '../utils/notification'
 import { createCoreHookWaiter, createCoreStartupHook } from './startupHook'
@@ -87,7 +92,6 @@ let lastServiceCoreEventKey = ''
 let serviceCoreStartupActive = false
 let serviceCoreReconnectResumePromise: Promise<void> | null = null
 let serviceUnavailableModeFallbackPromise: Promise<void> | null = null
-const serviceConnectionRetryTimeout = 10000
 const serviceConnectionRetryInterval = 500
 
 function delay(ms: number): Promise<void> {
@@ -96,7 +100,14 @@ function delay(ms: number): Promise<void> {
   })
 }
 
-setServiceUnavailableFallbackHandler((reason) => {
+setServiceUnavailableFallbackHandler(async (reason) => {
+  if (shouldSkipServiceUnavailableFallback()) {
+    await appendAppLog(
+      `[Manager]: skip service unavailable fallback during app update, ${reason}\n`
+    )
+    return
+  }
+
   if (!serviceUnavailableModeFallbackPromise) {
     serviceUnavailableModeFallbackPromise = fallbackUnavailableServiceModes(reason).finally(() => {
       serviceUnavailableModeFallbackPromise = null
@@ -158,29 +169,41 @@ async function waitForServiceCoreConnection(
     `[Manager]: Service connection failed, waiting before fallback, ${initialError}\n`
   )
 
-  if (!isServiceConnectionError(initialError)) {
+  const fallbackPolicy = getServiceFallbackPolicy()
+  const { pausedForAppUpdate, connectionRetryTimeout } = fallbackPolicy
+
+  if (!isServiceConnectionError(initialError) && !pausedForAppUpdate) {
     return { reachable: false, running: false, error: initialError }
   }
 
   const status = await getServiceStatusAfterConnectionError()
   if (status && status !== 'running') {
-    await appendAppLog(`[Manager]: Service status is ${status}, fallback immediately\n`)
-    return { reachable: false, running: false, error: initialError }
+    if (!pausedForAppUpdate) {
+      await appendAppLog(`[Manager]: Service status is ${status}, fallback immediately\n`)
+      return { reachable: false, running: false, error: initialError }
+    }
+    await appendAppLog(`[Manager]: Service status is ${status} during app update, keep waiting\n`)
   }
 
   const startedAt = Date.now()
   let lastError = initialError
 
-  while (Date.now() - startedAt < serviceConnectionRetryTimeout) {
+  while (Date.now() - startedAt < connectionRetryTimeout) {
     await delay(serviceConnectionRetryInterval)
 
     try {
       await getCoreStatus()
+      if (pausedForAppUpdate) {
+        await clearAppUpdateServiceFallbackPause()
+      }
       return { reachable: true, running: true, error: lastError }
     } catch (error) {
       lastError = error
       if (isServiceUnavailableError(error) && !isServiceConnectionError(error)) {
-        return { reachable: false, running: false, error }
+        if (!pausedForAppUpdate) {
+          return { reachable: false, running: false, error }
+        }
+        continue
       }
       if (!isServiceConnectionError(error)) {
         return { reachable: true, running: false, error }
@@ -189,7 +212,7 @@ async function waitForServiceCoreConnection(
   }
 
   await appendAppLog(
-    `[Manager]: Service still unavailable after ${serviceConnectionRetryTimeout}ms, ${lastError}\n`
+    `[Manager]: Service still unavailable after ${connectionRetryTimeout}ms, ${lastError}\n`
   )
   return { reachable: false, running: false, error: lastError }
 }
